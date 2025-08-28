@@ -11,6 +11,7 @@ interface CanvasStore extends CanvasState {
   setActiveTool: (tool: ToolType) => void;
   setCanvasSize: (size: { width: number; height: number }) => void;
   setZoom: (zoom: number) => void;
+  fitToScreen: (viewport: { width: number; height: number }) => void;
   toggleSnapToGrid: () => void;
   setGridSize: (size: number) => void;
   moveElement: (elementId: string, position: { x: number; y: number }) => void;
@@ -163,7 +164,24 @@ export const useCanvasStore = create<CanvasStore>()(
 
     setZoom: (zoom) =>
       set((state) => {
-        state.zoom = Math.max(0.1, Math.min(5, zoom));
+        state.zoom = Math.max(0.1, Math.min(2, zoom));
+      }),
+
+    fitToScreen: (viewport) =>
+      set((state) => {
+        // Calculate zoom to fit canvas in viewport with some padding
+        const padding = 40; // 20px padding on each side
+        const availableWidth = viewport.width - padding;
+        const availableHeight = viewport.height - padding;
+        
+        const scaleX = availableWidth / state.canvasSize.width;
+        const scaleY = availableHeight / state.canvasSize.height;
+        
+        // Use the smaller scale to ensure the entire canvas fits
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Clamp the zoom within our limits
+        state.zoom = Math.max(0.1, Math.min(2, scale));
       }),
 
     toggleSnapToGrid: () =>

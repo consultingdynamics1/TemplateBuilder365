@@ -183,7 +183,7 @@ export const Canvas: React.FC = () => {
     const oldScale = stage.scaleX();
     const direction = e.evt.deltaY > 0 ? -1 : 1;
     const factor = 0.1;
-    const newScale = Math.max(0.1, Math.min(5, oldScale + direction * factor));
+    const newScale = Math.max(0.1, Math.min(2, oldScale + direction * factor));
 
     // Use the store's setZoom to keep everything consistent
     const { setZoom } = useCanvasStore.getState();

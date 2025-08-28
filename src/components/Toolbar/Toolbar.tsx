@@ -37,6 +37,7 @@ export const Toolbar: React.FC = () => {
     duplicateElement,
     zoom,
     setZoom,
+    fitToScreen,
     snapToGrid,
     toggleSnapToGrid,
     loadCanvasState,
@@ -123,6 +124,15 @@ export const Toolbar: React.FC = () => {
 
   const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setZoom(parseFloat(e.target.value));
+  };
+
+  const handleFitToScreen = () => {
+    // Get viewport size (accounting for toolbar and properties panel)
+    const viewport = {
+      width: window.innerWidth - 400, // Subtract properties panel width
+      height: window.innerHeight - 60  // Subtract toolbar height
+    };
+    fitToScreen(viewport);
   };
 
   React.useEffect(() => {
@@ -257,13 +267,21 @@ export const Toolbar: React.FC = () => {
             <input
               type="range"
               min="0.1"
-              max="3"
+              max="2"
               step="0.1"
               value={zoom}
               onChange={handleZoomChange}
             />
             <span className="zoom-value">{Math.round(zoom * 100)}%</span>
           </label>
+          <button
+            className="tool-button"
+            onClick={handleFitToScreen}
+            title="Fit to Screen"
+            type="button"
+          >
+            <span className="tool-icon">🔍</span>
+          </button>
         </div>
       </div>
 
