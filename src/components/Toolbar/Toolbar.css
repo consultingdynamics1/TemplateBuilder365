@@ -1,0 +1,91 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  height: 60px;
+  box-sizing: border-box;
+}
+
+.toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toolbar-section:not(:last-child) {
+  border-right: 1px solid #e0e0e0;
+  padding-right: 1rem;
+}
+
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.tool-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.tool-button:hover {
+  background: #f5f5f5;
+  border-color: #ddd;
+}
+
+.tool-button.active {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  color: #1976d2;
+}
+
+.tool-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tool-button:disabled:hover {
+  background: white;
+  border-color: transparent;
+}
+
+.tool-button.danger:hover:not(:disabled) {
+  background: #ffebee;
+  border-color: #f44336;
+  color: #c62828;
+}
+
+.tool-icon {
+  user-select: none;
+}
+
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  color: #666;
+}
+
+.zoom-control input[type="range"] {
+  width: 100px;
+}
+
+.zoom-value {
+  min-width: 40px;
+  text-align: right;
+  font-weight: 500;
+}
