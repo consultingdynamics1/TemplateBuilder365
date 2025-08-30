@@ -11,18 +11,13 @@ export interface ProjectFile {
  * Generate a filename for a project file
  */
 export function generateProjectFilename(projectName: string): string {
-  const timestamp = new Date().toISOString()
-    .replace(/:/g, '')
-    .replace(/\..+/, '')
-    .replace('T', '-');
+  // Clean the project name but preserve readability
+  const cleanName = projectName
+    .trim()
+    .replace(/[<>:"/\\|?*]/g, '') // Remove invalid file chars
+    .replace(/\s+/g, ' '); // Normalize spaces
   
-  const safeName = projectName
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-  
-  return `${safeName}_${timestamp}.tb365`;
+  return `${cleanName}.tb365`;
 }
 
 /**
@@ -129,4 +124,24 @@ export async function loadProjectFile(filename: string): Promise<ProjectFile> {
   } catch (error) {
     throw new Error(`Could not load project: ${filename}`);
   }
+}
+
+/**
+ * Get list of existing project names from localStorage
+ * This is a temporary implementation - in production would query server/database
+ */
+export function getExistingProjectNames(): string[] {
+  const savedProjects: string[] = [];
+  
+  // In a real app, this would query the file system or database
+  // For now, we'll simulate with localStorage keys
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith('templatebuilder_project_')) {
+      const projectName = key.replace('templatebuilder_project_', '');
+      savedProjects.push(projectName);
+    }
+  }
+  
+  return savedProjects.sort();
 }

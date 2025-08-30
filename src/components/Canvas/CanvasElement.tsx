@@ -15,7 +15,7 @@ export const CanvasElement: React.FC<CanvasElementProps> = ({
   isSelected,
   transformerRef,
 }) => {
-  const { selectElement, moveElement, resizeElement, enterEditMode } = useCanvasStore();
+  const { selectElement, moveElement, resizeElement, enterEditMode, enterTableCellEditMode } = useCanvasStore();
   const shapeRef = React.useRef<any>(null);
   const [loadedImage, setLoadedImage] = React.useState<HTMLImageElement | null>(null);
 
@@ -171,6 +171,83 @@ export const CanvasElement: React.FC<CanvasElementProps> = ({
             opacity={element.opacity}
             image={loadedImage || undefined}
           />
+        );
+
+      case 'table':
+        // For tables, we need a different approach - render as a group
+        const tableElement = element as any; // TableElement
+        const cellWidth = element.size.width / tableElement.columns;
+        const cellHeight = element.size.height / tableElement.rows;
+        
+        return (
+          <Group
+            {...commonProps}
+            width={element.size.width}
+            height={element.size.height}
+          >
+            {/* Table border */}
+            <Rect
+              x={0}
+              y={0}
+              width={element.size.width}
+              height={element.size.height}
+              stroke={tableElement.borderColor}
+              strokeWidth={tableElement.borderWidth * 2}
+              fill="transparent"
+            />
+            
+            {/* Render cells */}
+            {tableElement.cells.map((row: any[], rowIndex: number) =>
+              row.map((cell: any, colIndex: number) => (
+                <Group key={`${rowIndex}-${colIndex}`}>
+                  {/* Cell background - clickable for editing */}
+                  <Rect
+                    x={colIndex * cellWidth}
+                    y={rowIndex * cellHeight}
+                    width={cellWidth}
+                    height={cellHeight}
+                    fill={cell.isHeader ? tableElement.headerBackground : tableElement.cellBackground}
+                    stroke={tableElement.borderColor}
+                    strokeWidth={tableElement.borderWidth}
+                    onClick={(e) => {
+                      e.cancelBubble = true;
+                      selectElement(element.id);
+                    }}
+                    onDblClick={(e) => {
+                      e.cancelBubble = true;
+                      enterTableCellEditMode(element.id, rowIndex, colIndex);
+                    }}
+                    onTap={(e) => {
+                      e.cancelBubble = true;
+                      selectElement(element.id);
+                    }}
+                    onDblTap={(e) => {
+                      e.cancelBubble = true;
+                      enterTableCellEditMode(element.id, rowIndex, colIndex);
+                    }}
+                    listening={true}
+                  />
+                  {/* Cell text */}
+                  <Text
+                    x={colIndex * cellWidth + tableElement.cellPadding}
+                    y={rowIndex * cellHeight + tableElement.cellPadding}
+                    width={cellWidth - tableElement.cellPadding * 2}
+                    height={cellHeight - tableElement.cellPadding * 2}
+                    text={cell.content}
+                    fontSize={tableElement.fontSize}
+                    fontFamily={tableElement.fontFamily}
+                    fill={tableElement.textColor}
+                    fontStyle={cell.isHeader ? 'bold' : 'normal'}
+                    align="left"
+                    verticalAlign="middle"
+                    wrap="word"
+                    ellipsis={true}
+                    listening={false} // Let background rect handle clicks
+                  />
+                </Group>
+              ))
+            )}
+          </Group>
         );
 
       default:

@@ -19,6 +19,11 @@ interface CanvasStore extends CanvasState {
   clearSelection: () => void;
   enterEditMode: (elementId: string) => void;
   exitEditMode: () => void;
+  enterTableCellEditMode: (elementId: string, row: number, col: number) => void;
+  exitTableCellEditMode: () => void;
+  editingTableCell: { elementId: string; row: number; col: number } | null;
+  bringToFront: (elementId: string) => void;
+  sendToBack: (elementId: string) => void;
   loadCanvasState: (canvasState: CanvasState) => void;
 }
 
@@ -32,7 +37,8 @@ const createDefaultElement = (
     const typeMap = {
       'text': 'text-field',
       'rectangle': 'background-box', 
-      'image': 'image-placeholder'
+      'image': 'image-placeholder',
+      'table': 'data-table'
     };
     const timestamp = Date.now().toString().slice(-4); // Last 4 digits for uniqueness
     return `${typeMap[elementType]}-${timestamp}`;
@@ -82,6 +88,30 @@ const createDefaultElement = (
         opacity: 1,
         fit: 'contain',
       };
+    case 'table':
+      // Create a 3x3 table with headers in first row
+      const cells = Array(3).fill(null).map((_, rowIndex) => 
+        Array(3).fill(null).map((_, colIndex) => ({
+          content: rowIndex === 0 ? `Header ${colIndex + 1}` : `Cell ${rowIndex},${colIndex + 1}`,
+          isHeader: rowIndex === 0
+        }))
+      );
+      return {
+        ...baseElement,
+        type: 'table',
+        size: { width: 300, height: 150 },
+        rows: 3,
+        columns: 3,
+        cells,
+        cellPadding: 8,
+        borderWidth: 1,
+        borderColor: '#000000',
+        headerBackground: '#f5f5f5',
+        cellBackground: '#ffffff',
+        textColor: '#000000',
+        fontSize: 12,
+        fontFamily: 'Arial',
+      };
     default:
       throw new Error(`Unknown element type: ${type}`);
   }
@@ -92,6 +122,7 @@ export const useCanvasStore = create<CanvasStore>()(
     elements: [],
     selectedElementId: null,
     editingElementId: null,
+    editingTableCell: null,
     activeTool: 'select',
     canvasSize: { width: 800, height: 600 },
     zoom: 1,
@@ -222,6 +253,7 @@ export const useCanvasStore = create<CanvasStore>()(
       set((state) => {
         state.selectedElementId = null;
         state.editingElementId = null; // Also exit edit mode
+        state.editingTableCell = null; // Also exit table cell edit mode
       }),
 
     enterEditMode: (elementId) =>
@@ -233,6 +265,35 @@ export const useCanvasStore = create<CanvasStore>()(
     exitEditMode: () =>
       set((state) => {
         state.editingElementId = null;
+      }),
+
+    enterTableCellEditMode: (elementId, row, col) =>
+      set((state) => {
+        state.editingTableCell = { elementId, row, col };
+        state.selectedElementId = elementId;
+      }),
+
+    exitTableCellEditMode: () =>
+      set((state) => {
+        state.editingTableCell = null;
+      }),
+
+    bringToFront: (elementId) =>
+      set((state) => {
+        const element = state.elements.find((el) => el.id === elementId);
+        if (element) {
+          const maxZIndex = Math.max(...state.elements.map((el) => el.zIndex));
+          element.zIndex = maxZIndex + 1;
+        }
+      }),
+
+    sendToBack: (elementId) =>
+      set((state) => {
+        const element = state.elements.find((el) => el.id === elementId);
+        if (element) {
+          const minZIndex = Math.min(...state.elements.map((el) => el.zIndex));
+          element.zIndex = minZIndex - 1;
+        }
       }),
 
     loadCanvasState: (canvasState) =>

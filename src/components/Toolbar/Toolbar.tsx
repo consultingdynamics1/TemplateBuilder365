@@ -1,7 +1,8 @@
 import React from 'react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import type { ToolType } from '../../types/index';
-import { saveProjectFile, loadProjectFromFile } from '../../utils/projectFiles';
+import { saveProjectFile, loadProjectFromFile, getExistingProjectNames } from '../../utils/projectFiles';
+import { SaveDialog } from '../SaveDialog/SaveDialog';
 import './Toolbar.css';
 
 interface ToolButtonProps {
@@ -35,6 +36,8 @@ export const Toolbar: React.FC = () => {
     selectedElementId, 
     deleteElement, 
     duplicateElement,
+    bringToFront,
+    sendToBack,
     zoom,
     setZoom,
     fitToScreen,
@@ -50,17 +53,27 @@ export const Toolbar: React.FC = () => {
   const [saveStatus, setSaveStatus] = React.useState<string>('');
   const [isSaving, setIsSaving] = React.useState(false);
   const [loadStatus, setLoadStatus] = React.useState<string>('');
+  const [showSaveDialog, setShowSaveDialog] = React.useState(false);
+  const [currentDocumentName, setCurrentDocumentName] = React.useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleSaveProject = async () => {
+  const handleSaveProject = () => {
+    // Generate default name if none exists
+    if (!currentDocumentName) {
+      const firstTextElement = elements.find(el => el.type === 'text');
+      const defaultName = firstTextElement?.content || 'Untitled Template';
+      setCurrentDocumentName(defaultName);
+    }
+    
+    setShowSaveDialog(true);
+  };
+
+  const handleSaveConfirm = async (filename: string) => {
     setIsSaving(true);
     setSaveStatus('Saving...');
+    setShowSaveDialog(false);
     
     try {
-      // Create project name from current timestamp or first text element
-      const firstTextElement = elements.find(el => el.type === 'text');
-      const projectName = firstTextElement?.content || 'Untitled Template';
-      
       // Collect complete canvas state
       const canvasState = {
         elements,
@@ -73,8 +86,9 @@ export const Toolbar: React.FC = () => {
         gridSize: 20 // Default grid size
       };
 
-      const filename = await saveProjectFile(projectName, canvasState);
-      setSaveStatus(`Saved: ${filename}`);
+      const savedFilename = await saveProjectFile(filename, canvasState);
+      setCurrentDocumentName(filename);
+      setSaveStatus(`Saved: ${savedFilename}`);
       
       // Clear status after 3 seconds
       setTimeout(() => setSaveStatus(''), 3000);
@@ -100,6 +114,7 @@ export const Toolbar: React.FC = () => {
     try {
       const projectData = await loadProjectFromFile(file);
       loadCanvasState(projectData.canvasState);
+      setCurrentDocumentName(projectData.projectName);
       setLoadStatus(`Loaded: ${projectData.projectName}`);
       
       setTimeout(() => setLoadStatus(''), 3000);
@@ -120,6 +135,7 @@ export const Toolbar: React.FC = () => {
     { tool: 'text' as ToolType, icon: 'T', title: 'Text Tool (T)' },
     { tool: 'rectangle' as ToolType, icon: '⬜', title: 'Rectangle Tool (R)' },
     { tool: 'image' as ToolType, icon: '🖼', title: 'Image Tool (I)' },
+    { tool: 'table' as ToolType, icon: '⚏', title: 'Table Tool (B)' },
   ];
 
   const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,6 +169,9 @@ export const Toolbar: React.FC = () => {
           break;
         case 'i':
           setActiveTool('image');
+          break;
+        case 'b':
+          setActiveTool('table');
           break;
         case 'delete':
         case 'backspace':
@@ -241,6 +260,24 @@ export const Toolbar: React.FC = () => {
         <div className="tool-group">
           <button
             className="tool-button"
+            onClick={() => selectedElementId && bringToFront(selectedElementId)}
+            disabled={!selectedElementId}
+            title="Bring to Front"
+            type="button"
+          >
+            <span className="tool-icon">⬆️</span>
+          </button>
+          <button
+            className="tool-button"
+            onClick={() => selectedElementId && sendToBack(selectedElementId)}
+            disabled={!selectedElementId}
+            title="Send to Back"
+            type="button"
+          >
+            <span className="tool-icon">⬇️</span>
+          </button>
+          <button
+            className="tool-button"
             onClick={() => selectedElementId && duplicateElement(selectedElementId)}
             disabled={!selectedElementId}
             title="Duplicate (Ctrl+D)"
@@ -297,6 +334,14 @@ export const Toolbar: React.FC = () => {
           </button>
         </div>
       </div>
+      
+      <SaveDialog
+        isOpen={showSaveDialog}
+        currentName={currentDocumentName || 'Untitled Template'}
+        existingFiles={getExistingProjectNames()}
+        onSave={handleSaveConfirm}
+        onCancel={() => setShowSaveDialog(false)}
+      />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { Stage, Layer, Transformer, Rect, Line } from 'react-konva';
 import Konva from 'konva';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { CanvasElement } from './CanvasElement';
+import type { TableElement } from '../../types';
 
 export const Canvas: React.FC = () => {
   const {
@@ -15,11 +16,13 @@ export const Canvas: React.FC = () => {
     addElement,
     snapToGrid,
     gridSize,
+    editingTableCell,
   } = useCanvasStore();
 
   const stageRef = React.useRef<Konva.Stage>(null);
   const transformerRef = React.useRef<Konva.Transformer>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [pendingImagePosition, setPendingImagePosition] = React.useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isPanning, setIsPanning] = React.useState(false);
@@ -46,6 +49,14 @@ export const Canvas: React.FC = () => {
     stage.position({ x: centerX, y: centerY });
     stage.batchDraw();
     
+    // Adjust scroll position to account for canvas offset
+    const container = containerRef.current;
+    if (container) {
+      // Calculate scroll offset proportional to zoom to reach actual canvas top
+      const scrollOffset = centerY + (zoom - 1) * 100;
+      container.scrollTop = Math.max(0, scrollOffset);
+    }
+    
     setIsInitialized(true);
     prevZoomRef.current = zoom;
   }, [canvasSize.width, canvasSize.height, zoom, isInitialized]);
@@ -69,6 +80,14 @@ export const Canvas: React.FC = () => {
     stage.scale({ x: zoom, y: zoom });
     stage.position({ x: centerX, y: centerY });
     stage.batchDraw();
+    
+    // Adjust scroll position to account for canvas offset
+    const container = containerRef.current;
+    if (container) {
+      // Calculate scroll offset proportional to zoom to reach actual canvas top
+      const scrollOffset = centerY + (zoom - 1) * 100;
+      container.scrollTop = Math.max(0, scrollOffset);
+    }
     
     prevZoomRef.current = zoom;
   }, [zoom, isInitialized, canvasSize.width, canvasSize.height]);
@@ -162,7 +181,7 @@ export const Canvas: React.FC = () => {
             y: (pos.y - stagePos.y) / zoom,
           };
           
-          if (activeTool === 'text' || activeTool === 'rectangle') {
+          if (activeTool === 'text' || activeTool === 'rectangle' || activeTool === 'table') {
             addElement(activeTool, actualPos);
           } else if (activeTool === 'image') {
             // Store position and trigger file picker
@@ -220,6 +239,7 @@ export const Canvas: React.FC = () => {
 
   return (
     <div 
+      ref={containerRef}
       className="canvas-container" 
       style={{ 
         width: '100%', 
@@ -341,6 +361,92 @@ export const Canvas: React.FC = () => {
           )}
         </Layer>
       </Stage>
+      
+      {/* Table cell editor overlay - positioned outside Stage */}
+      {editingTableCell && (() => {
+        const element = elements.find(el => el.id === editingTableCell.elementId) as TableElement;
+        if (element && element.type === 'table') {
+          const stage = stageRef.current;
+          if (!stage) return null;
+          
+          const cellWidth = element.size.width / element.columns;
+          const cellHeight = element.size.height / element.rows;
+          const cellX = editingTableCell.col * cellWidth;
+          const cellY = editingTableCell.row * cellHeight;
+          
+          // Calculate absolute position considering stage position and zoom
+          const stagePos = stage.position();
+          const absoluteX = (element.position.x + cellX) * zoom + (stagePos.x || 0);
+          const absoluteY = (element.position.y + cellY) * zoom + (stagePos.y || 0);
+          
+          return (
+            <div
+              style={{
+                position: 'absolute',
+                left: `${absoluteX}px`,
+                top: `${absoluteY}px`,
+                width: `${cellWidth * zoom}px`,
+                height: `${cellHeight * zoom}px`,
+                zIndex: 1000,
+                pointerEvents: 'auto',
+              }}
+            >
+              <input
+                autoFocus
+                defaultValue={element.cells[editingTableCell.row]?.[editingTableCell.col]?.content || ''}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const newCells = element.cells.map((row, rowIndex) => 
+                      row.map((cell, colIndex) => {
+                        if (rowIndex === editingTableCell.row && colIndex === editingTableCell.col) {
+                          return { ...cell, content: e.currentTarget.value };
+                        }
+                        return { ...cell };
+                      })
+                    );
+                    const { updateElement, exitTableCellEditMode } = useCanvasStore.getState();
+                    updateElement(element.id, { cells: newCells });
+                    exitTableCellEditMode();
+                  } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    const { exitTableCellEditMode } = useCanvasStore.getState();
+                    exitTableCellEditMode();
+                  }
+                }}
+                onBlur={(e) => {
+                  const newCells = element.cells.map((row, rowIndex) => 
+                    row.map((cell, colIndex) => {
+                      if (rowIndex === editingTableCell.row && colIndex === editingTableCell.col) {
+                        return { ...cell, content: e.currentTarget.value };
+                      }
+                      return { ...cell };
+                    })
+                  );
+                  const { updateElement, exitTableCellEditMode } = useCanvasStore.getState();
+                  updateElement(element.id, { cells: newCells });
+                  exitTableCellEditMode();
+                }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: '2px solid #2196f3',
+                  padding: `${element.cellPadding * zoom}px`,
+                  fontSize: `${element.fontSize * zoom}px`,
+                  fontFamily: element.fontFamily,
+                  backgroundColor: element.cells[editingTableCell.row]?.[editingTableCell.col]?.isHeader ? element.headerBackground : element.cellBackground,
+                  color: element.textColor,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  resize: 'none'
+                }}
+                placeholder="Enter cell content..."
+              />
+            </div>
+          );
+        }
+        return null;
+      })()}
       
       {/* Hidden file input for image uploads */}
       <input

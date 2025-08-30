@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCanvasStore } from '../../stores/canvasStore';
-import type { TemplateElement, TextElement, RectangleElement, ImageElement } from '../../types';
+import type { TemplateElement, TextElement, RectangleElement, ImageElement, TableElement } from '../../types';
 import './PropertiesPanel.css';
 
 const TextProperties: React.FC<{ element: TextElement }> = ({ element }) => {
@@ -292,6 +292,167 @@ const ImageProperties: React.FC<{ element: ImageElement }> = ({ element }) => {
   );
 };
 
+const TableProperties: React.FC<{ element: TableElement }> = ({ element }) => {
+  const { updateElement } = useCanvasStore();
+
+  const handleUpdate = (updates: Partial<TableElement>) => {
+    updateElement(element.id, updates);
+  };
+
+  const handleCellUpdate = (rowIndex: number, colIndex: number, content: string) => {
+    const newCells = [...element.cells];
+    if (newCells[rowIndex] && newCells[rowIndex][colIndex]) {
+      newCells[rowIndex][colIndex] = { ...newCells[rowIndex][colIndex], content };
+      handleUpdate({ cells: newCells });
+    }
+  };
+
+  const addRow = () => {
+    const newRow = Array(element.columns).fill(null).map((_, colIndex) => ({
+      content: `Cell ${element.rows + 1},${colIndex + 1}`,
+      isHeader: false
+    }));
+    const newCells = [...element.cells, newRow];
+    handleUpdate({ cells: newCells, rows: element.rows + 1 });
+  };
+
+  const removeRow = () => {
+    if (element.rows > 1) {
+      const newCells = element.cells.slice(0, -1);
+      handleUpdate({ cells: newCells, rows: element.rows - 1 });
+    }
+  };
+
+  const addColumn = () => {
+    const newCells = element.cells.map((row, rowIndex) => [
+      ...row,
+      { content: `Cell ${rowIndex + 1},${element.columns + 1}`, isHeader: rowIndex === 0 }
+    ]);
+    handleUpdate({ cells: newCells, columns: element.columns + 1 });
+  };
+
+  const removeColumn = () => {
+    if (element.columns > 1) {
+      const newCells = element.cells.map(row => row.slice(0, -1));
+      handleUpdate({ cells: newCells, columns: element.columns - 1 });
+    }
+  };
+
+  return (
+    <div className="property-group">
+      <h3>Table Properties</h3>
+      
+      <div className="property-row">
+        <div className="property-field">
+          <label>Rows: {element.rows}</label>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button onClick={addRow} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>+</button>
+            <button onClick={removeRow} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>−</button>
+          </div>
+        </div>
+        <div className="property-field">
+          <label>Columns: {element.columns}</label>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button onClick={addColumn} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>+</button>
+            <button onClick={removeColumn} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>−</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="property-row">
+        <div className="property-field">
+          <label>Font Size</label>
+          <input
+            type="number"
+            value={element.fontSize}
+            onChange={(e) => handleUpdate({ fontSize: parseInt(e.target.value) })}
+            min="8"
+            max="72"
+          />
+        </div>
+        <div className="property-field">
+          <label>Font Family</label>
+          <select
+            value={element.fontFamily}
+            onChange={(e) => handleUpdate({ fontFamily: e.target.value })}
+          >
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Georgia">Georgia</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="property-row">
+        <div className="property-field">
+          <label>Border Color</label>
+          <input
+            type="color"
+            value={element.borderColor}
+            onChange={(e) => handleUpdate({ borderColor: e.target.value })}
+          />
+        </div>
+        <div className="property-field">
+          <label>Border Width</label>
+          <input
+            type="number"
+            value={element.borderWidth}
+            onChange={(e) => handleUpdate({ borderWidth: parseInt(e.target.value) })}
+            min="0"
+            max="10"
+          />
+        </div>
+      </div>
+
+      <div className="property-row">
+        <div className="property-field">
+          <label>Header Background</label>
+          <input
+            type="color"
+            value={element.headerBackground}
+            onChange={(e) => handleUpdate({ headerBackground: e.target.value })}
+          />
+        </div>
+        <div className="property-field">
+          <label>Cell Background</label>
+          <input
+            type="color"
+            value={element.cellBackground}
+            onChange={(e) => handleUpdate({ cellBackground: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="property-field">
+        <label>Cell Content</label>
+        <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', padding: '8px' }}>
+          {element.cells.map((row, rowIndex) => (
+            <div key={rowIndex} style={{ marginBottom: '8px' }}>
+              <strong>Row {rowIndex + 1}:</strong>
+              {row.map((cell, colIndex) => (
+                <input
+                  key={`${rowIndex}-${colIndex}`}
+                  type="text"
+                  value={cell.content}
+                  onChange={(e) => handleCellUpdate(rowIndex, colIndex, e.target.value)}
+                  placeholder={`R${rowIndex + 1}C${colIndex + 1}`}
+                  style={{ 
+                    width: '100%', 
+                    margin: '2px 0', 
+                    padding: '4px',
+                    fontSize: '0.75rem'
+                  }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CommonProperties: React.FC<{ element: TemplateElement }> = ({ element }) => {
   const { updateElement } = useCanvasStore();
 
@@ -520,6 +681,8 @@ export const PropertiesPanel: React.FC = () => {
         return <RectangleProperties element={selectedElement as RectangleElement} />;
       case 'image':
         return <ImageProperties element={selectedElement as ImageElement} />;
+      case 'table':
+        return <TableProperties element={selectedElement as TableElement} />;
       default:
         return null;
     }
