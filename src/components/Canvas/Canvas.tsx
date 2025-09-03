@@ -17,6 +17,7 @@ export const Canvas: React.FC = () => {
     snapToGrid,
     gridSize,
     editingTableCell,
+    editingElementId,
   } = useCanvasStore();
 
   const stageRef = React.useRef<Konva.Stage>(null);
@@ -346,6 +347,28 @@ export const Canvas: React.FC = () => {
                 transformerRef={transformerRef as React.RefObject<Konva.Transformer>}
               />
             ))}
+          
+          {/* Text editing visual feedback */}
+          {editingElementId && (() => {
+            const element = elements.find(el => el.id === editingElementId);
+            if (element && element.type === 'text') {
+              return (
+                <Rect
+                  key={`editing-${element.id}`}
+                  x={element.position.x - 4}
+                  y={element.position.y - 4}
+                  width={element.size.width + 8}
+                  height={element.size.height + 8}
+                  fill="rgba(33, 150, 243, 0.1)"
+                  stroke="#2196f3"
+                  strokeWidth={2}
+                  cornerRadius={4}
+                  listening={false}
+                />
+              );
+            }
+            return null;
+          })()}
           
           {/* Transformer for selected elements */}
           {selectedElementId && (

@@ -8,11 +8,22 @@ const TextProperties: React.FC<{ element: TextElement }> = ({ element }) => {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const isEditing = editingElementId === element.id;
 
-  // Auto-focus textarea when entering edit mode
+  // Auto-focus textarea when entering edit mode with smooth scrolling
   React.useEffect(() => {
     if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.select();
+      // Smooth scroll the textarea into view first
+      textareaRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+      
+      // Focus and select with a small delay to ensure scrolling completes
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.select();
+        }
+      }, 200);
     }
   }, [isEditing]);
 
