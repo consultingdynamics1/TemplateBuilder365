@@ -1,0 +1,85 @@
+{
+  "nested": {
+    "agency": {
+      "name": "Sunset Realty",
+      "website": "sunsetrealty.com",
+      "tagline": "Your Trusted Real Estate Partner",
+      "license": "RE License #SR-12345"
+    },
+    "agent": {
+      "name": "Sarah Johnson",
+      "title": "Senior Real Estate Agent",
+      "phone": "3035550123",
+      "email": "sarah@sunsetrealty.com"
+    },
+    "property": {
+      "address": "1245 Highland Drive",
+      "city": "Denver",
+      "state": "Colorado",
+      "zip": "80202",
+      "price": "750000",
+      "bedrooms": "4",
+      "bathrooms": "3",
+      "sqft": "2400",
+      "description": "Stunning modern home with mountain views"
+    },
+    "neighborhood": {
+      "school": "Denver Public Schools",
+      "walkScore": "85",
+      "shopping": "Cherry Creek Mall nearby",
+      "parks": "Cheesman Park (0.5 miles)"
+    }
+  },
+  "flat": {
+    "agency.name": "Sunset Realty",
+    "property.city": "Denver",
+    "property.state": "Colorado",
+    "property.zip": "80202",
+    "agent.phone": "(303) 555-0123",
+    "agency.website": "https://sunsetrealty.com",
+    "property.price": "$750,000",
+    "property.sqft": "2,400"
+  },
+  "analysis": {
+    "totalInstances": 2,
+    "uniqueVariables": 2,
+    "categories": {
+      "property": 2
+    },
+    "dataAvailability": {
+      "foundInData": 2,
+      "foundInDefaults": 0,
+      "missing": 0,
+      "coveragePercent": 100
+    },
+    "variableList": [
+      "property.city",
+      "property.state"
+    ]
+  },
+  "nestedResult": {
+    "statistics": {
+      "originalLength": 3410,
+      "replacedLength": 3389,
+      "totalVariables": 2,
+      "replacedVariables": 2,
+      "missingVariables": 0,
+      "processingTime": "0ms"
+    },
+    "replacements": [
+      {
+        "variable": "property.city",
+        "original": "{{property.city}}",
+        "replaced": "Denver",
+        "source": "data"
+      },
+      {
+        "variable": "property.state",
+        "original": "{{property.state}}",
+        "replaced": "Colorado",
+        "source": "data"
+      }
+    ],
+    "missing": []
+  }
+}

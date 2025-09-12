@@ -1,0 +1,69 @@
+{
+  "variables": {
+    "property.city": {
+      "type": "address",
+      "description": "city for property",
+      "category": "Property Information",
+      "required": true,
+      "usedInElements": 1,
+      "elements": [
+        {
+          "elementId": "location-text",
+          "elementName": "location",
+          "elementType": "text"
+        }
+      ]
+    },
+    "property.state": {
+      "type": "address",
+      "description": "state for property",
+      "category": "Property Information",
+      "required": true,
+      "usedInElements": 1,
+      "elements": [
+        {
+          "elementId": "location-text",
+          "elementName": "location",
+          "elementType": "text"
+        }
+      ]
+    }
+  },
+  "defaultValues": {
+    "property.city": "Your City",
+    "property.state": "State"
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "property.city": {
+        "type": "string",
+        "description": "city for property",
+        "default": "Your City"
+      },
+      "property.state": {
+        "type": "string",
+        "description": "state for property",
+        "default": "State"
+      }
+    },
+    "required": [
+      "property.city",
+      "property.state"
+    ]
+  },
+  "categories": {
+    "Property Information": [
+      "property.city",
+      "property.state"
+    ]
+  },
+  "statistics": {
+    "totalElements": 2,
+    "elementsWithVariables": 1,
+    "elementsWithRawContent": 2,
+    "elementsWithMixedContent": 1,
+    "totalVariables": 2,
+    "uniqueVariables": 2
+  }
+}

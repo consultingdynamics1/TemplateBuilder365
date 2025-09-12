@@ -1,0 +1,121 @@
+{
+  "pipeline": "TB365 → HTML Template → Variable Replacement",
+  "originalProject": {},
+  "htmlGeneration": {
+    "sizeKB": 4,
+    "variables": 12,
+    "complexity": "moderate",
+    "generationTime": "1ms"
+  },
+  "variableReplacement": {
+    "statistics": {
+      "originalLength": 4398,
+      "replacedLength": 4399,
+      "totalVariables": 12,
+      "replacedVariables": 12,
+      "missingVariables": 0,
+      "processingTime": "16ms"
+    },
+    "replacements": [
+      {
+        "variable": "agency.name",
+        "original": "{{agency.name}}",
+        "replaced": "Mountain View Realty",
+        "source": "data"
+      },
+      {
+        "variable": "agency.tagline",
+        "original": "{{agency.tagline}}",
+        "replaced": "Your Gateway to Colorado Living",
+        "source": "data"
+      },
+      {
+        "variable": "property.address",
+        "original": "{{property.address}}",
+        "replaced": "2847 Pine Ridge Trail",
+        "source": "data"
+      },
+      {
+        "variable": "property.city",
+        "original": "{{property.city}}",
+        "replaced": "Boulder",
+        "source": "data"
+      },
+      {
+        "variable": "property.state",
+        "original": "{{property.state}}",
+        "replaced": "Colorado",
+        "source": "data"
+      },
+      {
+        "variable": "property.zip",
+        "original": "{{property.zip}}",
+        "replaced": "80302",
+        "source": "data"
+      },
+      {
+        "variable": "property.price",
+        "original": "{{property.price}}",
+        "replaced": "$895,000",
+        "source": "data"
+      },
+      {
+        "variable": "property.sqft",
+        "original": "{{property.sqft}}",
+        "replaced": "3,200 sq ft",
+        "source": "data"
+      },
+      {
+        "variable": "agent.name",
+        "original": "{{agent.name}}",
+        "replaced": "Michael Rodriguez",
+        "source": "data"
+      },
+      {
+        "variable": "agent.phone",
+        "original": "{{agent.phone}}",
+        "replaced": "(720) 555-1234",
+        "source": "data"
+      },
+      {
+        "variable": "agent.email",
+        "original": "{{agent.email}}",
+        "replaced": "michael@mountainviewrealty.com",
+        "source": "data"
+      },
+      {
+        "variable": "agency.website",
+        "original": "{{agency.website}}",
+        "replaced": "https://mountainviewrealty.com",
+        "source": "data"
+      }
+    ],
+    "missing": []
+  },
+  "businessData": {
+    "agency": {
+      "name": "Mountain View Realty",
+      "tagline": "Your Gateway to Colorado Living",
+      "website": "mountainviewrealty.com",
+      "license": "CO-RE-2024-001"
+    },
+    "agent": {
+      "name": "Michael Rodriguez",
+      "title": "Senior Real Estate Specialist",
+      "phone": "7205551234",
+      "email": "michael@mountainviewrealty.com"
+    },
+    "property": {
+      "address": "2847 Pine Ridge Trail",
+      "city": "Boulder",
+      "state": "Colorado",
+      "zip": "80302",
+      "price": "895000",
+      "bedrooms": "4",
+      "bathrooms": "3.5",
+      "sqft": "3200",
+      "type": "Single Family Home"
+    }
+  },
+  "generatedAt": "2025-09-12T20:06:27.128Z"
+}

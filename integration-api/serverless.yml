@@ -1,0 +1,213 @@
+service: tb365-converter-api
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    TB365_BUCKET: tb365-designs-${self:provider.stage}
+    API_TEMPLATE_BUCKET: apitemplate-exports-${self:provider.stage}
+    DEV_BUCKET: your-integration-api-${self:provider.stage}
+    API_KEY: ${env:API_KEY, 'dev-api-key-change-me'}
+    NODE_ENV: ${self:provider.stage}
+    OUTPUT_MODE: ${env:OUTPUT_MODE, 'response-only'}
+    LOCAL_OUTPUT_DIR: ${env:LOCAL_OUTPUT_DIR, '/tmp/test-output'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:DeleteObject
+      Resource: 
+        - "arn:aws:s3:::tb365-designs-${self:provider.stage}/*"
+        - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}/*"
+        - "arn:aws:s3:::your-integration-api-${self:provider.stage}/*"
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+      Resource: 
+        - "arn:aws:s3:::tb365-designs-${self:provider.stage}"
+        - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}"
+        - "arn:aws:s3:::your-integration-api-${self:provider.stage}"
+
+functions:
+  convertTb365ToApiTemplate:
+    handler: functions/tb365-converter.handler
+    timeout: 30
+    memorySize: 512
+    events:
+      - httpApi:
+          path: /convert
+          method: post
+          cors:
+            allowOrigin: '*'
+            allowHeaders:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+            allowMethods:
+              - POST
+              - OPTIONS
+      - httpApi:
+          path: /convert/{id}
+          method: get
+          cors:
+            allowOrigin: '*'
+            allowHeaders:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+            allowMethods:
+              - GET
+              - OPTIONS
+      - httpApi:
+          path: /output-config
+          method: get
+          cors:
+            allowOrigin: '*'
+            allowHeaders:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+            allowMethods:
+              - GET
+              - OPTIONS
+      - httpApi:
+          path: /output-config
+          method: post
+          cors:
+            allowOrigin: '*'
+            allowHeaders:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+            allowMethods:
+              - POST
+              - OPTIONS
+  
+  healthCheck:
+    handler: functions/tb365-converter.health
+    events:
+      - httpApi:
+          path: /health
+          method: get
+
+resources:
+  Resources:
+    Tb365DesignsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: tb365-designs-${self:provider.stage}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    ApiTemplateExportsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: apitemplate-exports-${self:provider.stage}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    DevBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: your-integration-api-${self:provider.stage}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+  Outputs:
+    ApiGatewayRestApiId:
+      Value:
+        Ref: HttpApi
+      Export:
+        Name: ${self:service}-${self:provider.stage}-HttpApiId
+    
+    ApiGatewayRestApiRootResourceId:
+      Value:
+        Fn::GetAtt:
+          - HttpApi
+          - RootResourceId
+      Export:
+        Name: ${self:service}-${self:provider.stage}-HttpApiRootResourceId
+    
+    ServiceEndpoint:
+      Description: URL of the service endpoint
+      Value:
+        Fn::Join:
+          - ''
+          - - 'https://'
+            - Ref: HttpApi
+            - '.execute-api.'
+            - ${self:provider.region}
+            - '.amazonaws.com'
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3001
+    host: 0.0.0.0

@@ -1,0 +1,170 @@
+{
+  "projectName": "Complete Pipeline Test - Real Estate Flyer",
+  "savedAt": "2025-09-12T20:48:47.016Z",
+  "version": "1.0",
+  "canvasState": {
+    "elements": [
+      {
+        "id": "header-bg",
+        "type": "rectangle",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "size": {
+          "width": 800,
+          "height": 120
+        },
+        "visible": true,
+        "locked": false,
+        "name": "header-background",
+        "zIndex": 1,
+        "fill": "#2c5aa0",
+        "stroke": "#1e3f73",
+        "strokeWidth": 2,
+        "cornerRadius": 10
+      },
+      {
+        "id": "company-title",
+        "type": "text",
+        "position": {
+          "x": 50,
+          "y": 30
+        },
+        "size": {
+          "width": 700,
+          "height": 60
+        },
+        "visible": true,
+        "locked": false,
+        "name": "company-title",
+        "zIndex": 2,
+        "content": "{{agency.name}}",
+        "fontSize": 36,
+        "fontFamily": "Georgia",
+        "fontWeight": "bold",
+        "textAlign": "center",
+        "color": "#ffffff"
+      },
+      {
+        "id": "tagline",
+        "type": "text",
+        "position": {
+          "x": 50,
+          "y": 80
+        },
+        "size": {
+          "width": 700,
+          "height": 30
+        },
+        "visible": true,
+        "locked": false,
+        "name": "tagline",
+        "zIndex": 3,
+        "content": "{{agency.tagline}}",
+        "fontSize": 18,
+        "fontFamily": "Georgia",
+        "fontStyle": "italic",
+        "textAlign": "center",
+        "color": "#ffffff"
+      },
+      {
+        "id": "property-details",
+        "type": "text",
+        "position": {
+          "x": 50,
+          "y": 150
+        },
+        "size": {
+          "width": 350,
+          "height": 200
+        },
+        "visible": true,
+        "locked": false,
+        "name": "property-details",
+        "zIndex": 4,
+        "content": "PROPERTY DETAILS\\n\\nAddress: {{property.address}}\\nCity: {{property.city}}, {{property.state}} {{property.zip}}\\nType: {{property.type}}\\nBedrooms: {{property.bedrooms}}\\nBathrooms: {{property.bathrooms}}\\nSquare Feet: {{property.sqft}}\\nLot Size: {{property.lotSize}}",
+        "fontSize": 16,
+        "fontFamily": "Arial",
+        "fontWeight": "normal",
+        "textAlign": "left",
+        "color": "#333333"
+      },
+      {
+        "id": "price-box",
+        "type": "rectangle",
+        "position": {
+          "x": 450,
+          "y": 150
+        },
+        "size": {
+          "width": 300,
+          "height": 80
+        },
+        "visible": true,
+        "locked": false,
+        "name": "price-background",
+        "zIndex": 5,
+        "fill": "#28a745",
+        "stroke": "#1e7e34",
+        "strokeWidth": 2,
+        "cornerRadius": 8
+      },
+      {
+        "id": "price-text",
+        "type": "text",
+        "position": {
+          "x": 450,
+          "y": 150
+        },
+        "size": {
+          "width": 300,
+          "height": 80
+        },
+        "visible": true,
+        "locked": false,
+        "name": "price-text",
+        "zIndex": 6,
+        "content": "{{property.price}}",
+        "fontSize": 32,
+        "fontFamily": "Arial",
+        "fontWeight": "bold",
+        "textAlign": "center",
+        "color": "#ffffff"
+      },
+      {
+        "id": "agent-info",
+        "type": "text",
+        "position": {
+          "x": 450,
+          "y": 250
+        },
+        "size": {
+          "width": 300,
+          "height": 150
+        },
+        "visible": true,
+        "locked": false,
+        "name": "agent-info",
+        "zIndex": 7,
+        "content": "CONTACT INFORMATION\\n\\nAgent: {{agent.name}}\\nTitle: {{agent.title}}\\nPhone: {{agent.phone}}\\nEmail: {{agent.email}}\\nWebsite: {{agency.website}}\\nLicense: {{agency.license}}",
+        "fontSize": 14,
+        "fontFamily": "Arial",
+        "fontWeight": "normal",
+        "textAlign": "left",
+        "color": "#333333"
+      }
+    ],
+    "selectedElementId": null,
+    "editingElementId": null,
+    "editingTableCell": null,
+    "activeTool": "select",
+    "canvasSize": {
+      "width": 800,
+      "height": 450
+    },
+    "zoom": 1,
+    "snapToGrid": false,
+    "gridSize": 20
+  }
+}

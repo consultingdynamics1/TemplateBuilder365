@@ -1,0 +1,214 @@
+# TemplateBuilder365 - CLAUDE.md
+
+## Project Overview
+
+**TemplateBuilder365** is a React-based visual template builder application that allows users to create, edit, and manage design templates. It's built with TypeScript, React 19, and Konva.js for 2D canvas rendering, providing a Figma-like design experience in the browser.
+
+## Architecture
+
+### Tech Stack
+- **Frontend**: React 19.1.1 with TypeScript
+- **Build Tool**: Vite 7.1.2 
+- **Canvas Rendering**: Konva.js 9.3.22 with react-konva 19.0.7
+- **State Management**: Zustand 5.0.8 with Immer for immutable updates
+- **Development**: ESLint, TypeScript strict mode
+- **Server**: Runs on port 5174
+
+### Key Dependencies
+- `konva` & `react-konva` - 2D canvas library for rendering elements
+- `zustand` - Lightweight state management
+- `immer` - Immutable state updates
+- `react-konva-utils` - Additional utilities for Konva integration
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── Canvas/
+│   │   ├── Canvas.tsx           # Main canvas component with Konva Stage
+│   │   ├── CanvasElement.tsx    # Individual element renderer
+│   │   ├── TableElement.tsx     # Table element component
+│   │   └── index.ts
+│   ├── PropertiesPanel/
+│   │   ├── PropertiesPanel.tsx  # Element properties editor
+│   │   └── index.ts
+│   ├── SaveDialog/
+│   │   └── SaveDialog.tsx       # File save dialog component
+│   └── Toolbar/
+│       ├── Toolbar.tsx          # Main toolbar with tools and actions
+│       └── index.ts
+├── stores/
+│   └── canvasStore.ts           # Zustand store with canvas state management
+├── types/
+│   └── index.ts                 # TypeScript type definitions
+├── utils/
+│   ├── index.ts
+│   └── projectFiles.ts          # File save/load utilities
+├── App.tsx                      # Root app component
+└── main.tsx                     # React app entry point
+```
+
+## Core Features
+
+### 1. Element Types
+- **Text Elements**: Editable text with font styling, alignment, colors
+- **Rectangle Elements**: Shapes with fill, stroke, corner radius
+- **Image Elements**: Image placeholders with file upload and drag-drop support
+- **Table Elements**: Editable data tables with headers and cells
+
+### 2. Canvas Features
+- **Zoom Controls**: 10%-200% zoom with fit-to-screen functionality
+- **Grid System**: Optional snap-to-grid with configurable grid size (default 20px)
+- **Pan & Zoom**: Mouse wheel zoom, drag to pan canvas
+- **Element Management**: Select, move, resize, duplicate, delete elements
+- **Layer Management**: Bring to front/send to back (z-index control)
+
+### 3. Editing Capabilities
+- **Direct Text Editing**: Double-click text elements to edit inline
+- **Table Cell Editing**: Click table cells to edit content with overlay input
+- **Properties Panel**: Comprehensive property editor for selected elements
+- **Keyboard Shortcuts**: 
+  - `V` - Select tool
+  - `T` - Text tool  
+  - `R` - Rectangle tool
+  - `I` - Image tool
+  - `B` - Table tool
+  - `Ctrl+S` - Save project
+  - `Ctrl+D` - Duplicate element
+  - `Del/Backspace` - Delete element
+
+### 4. File Management
+- **Project Save/Load**: Custom `.tb365` file format with JSON structure
+- **Browser Download**: Files download to user's device
+- **Template System**: Includes sample real estate template
+
+## Development Workflow
+
+### Available Scripts
+```bash
+npm run dev        # Start development server on port 5174
+npm run build      # Build for production (TypeScript compile + Vite build)
+npm run lint       # Run ESLint
+npm run preview    # Preview production build
+```
+
+### Development Environment
+- **Hot Module Replacement (HMR)**: Enabled via Vite
+- **TypeScript**: Strict mode enabled with comprehensive type checking
+- **ESLint**: Configured with React Hooks and React Refresh plugins
+- **Fast Refresh**: Automatic component updates during development
+
+## State Management
+
+The application uses Zustand with Immer for state management. The main store (`canvasStore.ts`) manages:
+
+- **Canvas State**: Elements array, selected element, editing modes
+- **Viewport State**: Zoom level, canvas size, grid settings  
+- **Tool State**: Active tool, snap-to-grid toggle
+- **Element Operations**: Add, update, delete, move, resize elements
+
+### Key Store Actions
+- `addElement(type, position)` - Create new element
+- `selectElement(id)` - Select element for editing
+- `updateElement(id, updates)` - Update element properties
+- `moveElement(id, position)` - Move element (with grid snapping)
+- `resizeElement(id, size)` - Resize element
+- `setZoom(level)` - Update zoom level
+- `fitToScreen(viewport)` - Auto-fit canvas to viewport
+
+## Component Architecture
+
+### Canvas Component (`src/components/Canvas/Canvas.tsx`)
+- Konva Stage wrapper with event handling
+- Manages pan/zoom, element selection, tool interactions
+- Drag-and-drop image upload support
+- Grid rendering when snap-to-grid enabled
+- Table cell editing overlay system
+
+### Toolbar Component (`src/components/Toolbar/Toolbar.tsx`)
+- Tool selection (select, text, rectangle, image, table)
+- File operations (save/load projects)
+- Element operations (duplicate, delete, bring to front/back)
+- Zoom controls and fit-to-screen
+- Grid toggle
+
+### Properties Panel (`src/components/PropertiesPanel/PropertiesPanel.tsx`)
+- Context-sensitive property editor
+- Text formatting (font, size, color, alignment)
+- Shape properties (fill, stroke, corner radius)
+- Image properties (opacity, fit mode)
+- Table properties (rows, columns, styling)
+
+## File Format
+
+Projects are saved as `.tb365` JSON files with this structure:
+
+```json
+{
+  "projectName": "Template Name",
+  "savedAt": "2025-01-XX...",
+  "version": "1.0",
+  "canvasState": {
+    "elements": [...],
+    "canvasSize": { "width": 800, "height": 600 },
+    "zoom": 1,
+    "snapToGrid": false,
+    "gridSize": 20
+  }
+}
+```
+
+## Performance Considerations
+
+- **Zustand + Immer**: Efficient immutable state updates
+- **Konva.js**: Hardware-accelerated 2D rendering
+- **Element Sorting**: Z-index based rendering order
+- **Selective Re-rendering**: Only affected elements re-render on updates
+- **File Handling**: Client-side file operations (no server dependency)
+
+## Development Notes
+
+### Adding New Element Types
+1. Add type definition to `src/types/index.ts`
+2. Update `ElementType` union and `TemplateElement` type
+3. Add creation logic in `canvasStore.ts` `createDefaultElement` function
+4. Implement renderer in `CanvasElement.tsx`
+5. Add tool button and icon in `Toolbar.tsx`
+6. Add properties UI in `PropertiesPanel.tsx`
+
+### Keyboard Shortcut Integration
+Shortcuts are handled in `Toolbar.tsx` with a `useEffect` that listens for keydown events. The handler checks if focus is on input elements to avoid conflicts.
+
+### Canvas Coordinate System
+- Canvas uses Konva's coordinate system (0,0 at top-left)
+- Zoom scaling affects positioning calculations
+- Stage position offset must be considered for UI overlays
+- Grid snapping rounds positions to grid boundaries
+
+## Known Features & Behaviors
+
+- **Auto-tool switching**: After placing an element, tool switches back to select (Figma-style)
+- **Element naming**: Auto-generated semantic names (e.g., "text-field-1234", "background-box-5678")
+- **Drag and drop**: Images can be dragged directly onto canvas
+- **File picker fallback**: Image tool opens file picker when clicking canvas
+- **Table editing**: Click cells to edit, Enter saves, Escape cancels
+- **Zoom limits**: 10% to 200% zoom range with smooth scaling
+- **Canvas centering**: Canvas auto-centers when smaller than viewport
+
+## Testing & Deployment
+
+- **TypeScript Compilation**: `tsc -b` for type checking
+- **Build Process**: `vite build` creates optimized production bundle
+- **Static Hosting**: Built files can be served from any static host
+- **No Backend Required**: Fully client-side application (files download to browser)
+
+## Future Enhancement Opportunities
+
+- Server-side project storage and sharing
+- Additional element types (circles, lines, arrows)
+- Advanced table features (merge cells, formulas)
+- Export to various formats (PNG, PDF, SVG)
+- Collaboration features
+- Component library and reusable templates
+- Undo/redo functionality

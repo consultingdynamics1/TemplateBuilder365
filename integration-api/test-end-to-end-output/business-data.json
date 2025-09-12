@@ -1,0 +1,25 @@
+{
+  "agency": {
+    "name": "Mountain View Realty",
+    "tagline": "Your Gateway to Colorado Living",
+    "website": "mountainviewrealty.com",
+    "license": "CO-RE-2024-001"
+  },
+  "agent": {
+    "name": "Michael Rodriguez",
+    "title": "Senior Real Estate Specialist",
+    "phone": "7205551234",
+    "email": "michael@mountainviewrealty.com"
+  },
+  "property": {
+    "address": "2847 Pine Ridge Trail",
+    "city": "Boulder",
+    "state": "Colorado",
+    "zip": "80302",
+    "price": "895000",
+    "bedrooms": "4",
+    "bathrooms": "3.5",
+    "sqft": "3200",
+    "type": "Single Family Home"
+  }
+}

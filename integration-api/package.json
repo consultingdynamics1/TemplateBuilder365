@@ -1,0 +1,57 @@
+{
+  "name": "tb365-converter-api",
+  "version": "1.0.0",
+  "description": "Serverless API to convert TB365 design format to APITemplate.io format",
+  "main": "functions/tb365-converter.js",
+  "scripts": {
+    "deploy": "serverless deploy",
+    "deploy:dev": "serverless deploy --stage dev",
+    "deploy:prod": "serverless deploy --stage prod",
+    "invoke": "serverless invoke",
+    "invoke:local": "serverless invoke local",
+    "logs": "serverless logs",
+    "remove": "serverless remove",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:local": "node test-local.js",
+    "test:simple": "node test-simple.js",
+    "test:local-files": "node test-local-files.js",
+    "test:html": "node test-html-generation.js",
+    "test:variables": "node test-variable-replacer.js",
+    "test:end-to-end": "NODE_ENV=development node test-end-to-end.js",
+    "test:production": "NODE_ENV=development node test-production-scenarios.js",
+    "test:renderer": "node test-renderer-simple.js",
+    "test:pipeline": "node test-complete-pipeline.js",
+    "test:output-modes": "node test-output-modes.js",
+    "test:lambda": "serverless invoke local --function convertTb365ToApiTemplate --path test-event.json"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.658.1",
+    "@aws-sdk/s3-request-presigner": "^3.658.1",
+    "aws-lambda": "^1.0.7",
+    "joi": "^17.13.3",
+    "puppeteer": "^24.20.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "serverless": "^4.4.3",
+    "serverless-offline": "^12.0.4",
+    "serverless-webpack": "^5.14.1",
+    "webpack": "^5.94.0",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "serverless",
+    "aws",
+    "lambda",
+    "tb365",
+    "apitemplate",
+    "converter"
+  ],
+  "author": "TemplateBuilder365",
+  "license": "MIT"
+}

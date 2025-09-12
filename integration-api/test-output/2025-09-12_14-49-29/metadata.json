@@ -1,0 +1,105 @@
+{
+  "testInfo": {
+    "timestamp": "2025-09-12T20:49:36.286Z",
+    "totalDuration": "7126ms",
+    "success": false,
+    "outputDirectory": "C:\\TemplateBuilder365\\integration-api\\test-output\\2025-09-12_14-49-29"
+  },
+  "pipeline": {
+    "stages": [
+      {
+        "stage": "parse",
+        "duration": "5ms",
+        "success": true,
+        "details": {
+          "elements": 7,
+          "variables": 18
+        }
+      },
+      {
+        "stage": "html_generation",
+        "duration": "2ms",
+        "success": true,
+        "details": {
+          "sizeKB": 6,
+          "variables": 18,
+          "complexity": "complex"
+        }
+      },
+      {
+        "stage": "variable_replacement",
+        "duration": "17ms",
+        "success": true,
+        "details": {
+          "totalVariables": 18,
+          "replacedVariables": 18,
+          "missingVariables": 0,
+          "warnings": 0
+        }
+      },
+      {
+        "stage": "png_generation",
+        "duration": "3033ms",
+        "success": true,
+        "details": {
+          "sizeKB": 116,
+          "dimensions": "1200x800"
+        }
+      },
+      {
+        "stage": "pdf_generation",
+        "duration": "3688ms",
+        "success": false,
+        "details": {
+          "error": "Connection closed."
+        }
+      }
+    ],
+    "errors": [
+      {
+        "stage": "pdf_generation",
+        "error": "Connection closed."
+      }
+    ]
+  },
+  "input": {
+    "tb365Elements": 7,
+    "businessDataCategories": 3
+  },
+  "output": {
+    "filesGenerated": 5,
+    "totalSizeKB": 128
+  },
+  "files": [
+    {
+      "name": "input-tb365.json",
+      "stage": "input",
+      "sizeKB": 0,
+      "relativePath": "test-output\\2025-09-12_14-49-29\\input-tb365.json"
+    },
+    {
+      "name": "data.json",
+      "stage": "input",
+      "sizeKB": 0,
+      "relativePath": "test-output\\2025-09-12_14-49-29\\data.json"
+    },
+    {
+      "name": "template.html",
+      "stage": "html_generation",
+      "sizeKB": 6,
+      "relativePath": "test-output\\2025-09-12_14-49-29\\template.html"
+    },
+    {
+      "name": "final.html",
+      "stage": "variable_replacement",
+      "sizeKB": 6,
+      "relativePath": "test-output\\2025-09-12_14-49-29\\final.html"
+    },
+    {
+      "name": "output.png",
+      "stage": "png_generation",
+      "sizeKB": 116,
+      "relativePath": "test-output\\2025-09-12_14-49-29\\output.png"
+    }
+  ]
+}
