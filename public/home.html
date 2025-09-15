@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TB365 - Cognito Authentication Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .status.authenticated {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.unauthenticated {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .user-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .token-section {
+            margin: 20px 0;
+        }
+        .token-display {
+            background: #f1f3f4;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.logout {
+            background: #dc3545;
+        }
+        .button.logout:hover {
+            background: #c82333;
+        }
+        .test-section {
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+            margin-top: 30px;
+        }
+        .api-test {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .api-result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 TB365 Cognito Authentication Test</h1>
+            <p>Test page for AWS Cognito User Pool integration</p>
+        </div>
+
+        <div id="authStatus" class="status unauthenticated">
+            🔴 Not Authenticated
+        </div>
+
+        <div id="userInfo" class="user-info" style="display: none;">
+            <h3>👤 User Information</h3>
+            <div id="userDetails"></div>
+        </div>
+
+        <div id="authButtons">
+            <button id="loginBtn" class="button">🔑 Login with Cognito</button>
+            <button id="logoutBtn" class="button logout" style="display: none;">🚪 Logout</button>
+        </div>
+
+        <div class="token-section">
+            <h3>🎫 JWT Token</h3>
+            <div id="tokenDisplay" class="token-display">No token available</div>
+            <small>Note: Token is automatically included in API requests</small>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 API Testing</h3>
+            <p>Test authenticated requests to the TB365 conversion API:</p>
+
+            <div class="api-test">
+                <h4>Health Check</h4>
+                <button id="testHealthBtn" class="button">Test /health</button>
+                <div id="healthResult" class="api-result">Click button to test</div>
+            </div>
+
+            <div class="api-test">
+                <h4>Output Config</h4>
+                <button id="testConfigBtn" class="button">Test /output-config</button>
+                <div id="configResult" class="api-result">Click button to test</div>
+            </div>
+
+            <div class="api-test">
+                <h4>Sample Conversion</h4>
+                <button id="testConvertBtn" class="button">Test /convert</button>
+                <div id="convertResult" class="api-result">Click button to test</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center; color: #666;">
+            <small>
+                User Pool: us-east-1_RIOPGg1Cq<br>
+                Environment: Development<br>
+                <a href="/" style="color: #007bff;">← Back to TB365 App</a>
+            </small>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update these values after creating the app client
+        const CONFIG = {
+            userPoolId: 'us-east-1_RIOPGg1Cq',
+            clientId: '2addji24p0obg5sqedgise13i4', // Using working TemplateStudio365-Staging client
+            region: 'us-east-1',
+            // Update this URL after deploying the Lambda function
+            apiBaseUrl: 'https://REPLACE_WITH_API_GATEWAY_URL.execute-api.us-east-1.amazonaws.com/dev'
+        };
+
+        // UI Elements
+        const authStatus = document.getElementById('authStatus');
+        const userInfo = document.getElementById('userInfo');
+        const userDetails = document.getElementById('userDetails');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const tokenDisplay = document.getElementById('tokenDisplay');
+
+        // Test buttons
+        const testHealthBtn = document.getElementById('testHealthBtn');
+        const testConfigBtn = document.getElementById('testConfigBtn');
+        const testConvertBtn = document.getElementById('testConvertBtn');
+
+        let currentToken = null;
+        let currentUser = null;
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            console.log('🚀 TB365 Cognito Test Page Loaded');
+            checkAuthenticationStatus();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            loginBtn.addEventListener('click', login);
+            logoutBtn.addEventListener('click', logout);
+            testHealthBtn.addEventListener('click', () => testAPI('/health', 'GET'));
+            testConfigBtn.addEventListener('click', () => testAPI('/output-config', 'GET'));
+            testConvertBtn.addEventListener('click', () => testAPI('/convert', 'POST', getSampleConversionData()));
+        }
+
+        function checkAuthenticationStatus() {
+            // Check URL for authorization code (OAuth callback)
+            const urlParams = new URLSearchParams(window.location.search);
+            const authCode = urlParams.get('code');
+            const error = urlParams.get('error');
+
+            if (error) {
+                console.error('❌ Authentication error:', error);
+                updateAuthStatus(false, `Authentication error: ${error}`);
+                return;
+            }
+
+            if (authCode) {
+                console.log('✅ Authorization code received:', authCode.substring(0, 10) + '...');
+                // In a real implementation, exchange the code for tokens
+                // For now, we'll simulate successful authentication
+                simulateAuthenticatedState();
+                return;
+            }
+
+            // Check localStorage for existing session
+            const storedToken = localStorage.getItem('tb365_token');
+            const storedUser = localStorage.getItem('tb365_user');
+
+            if (storedToken && storedUser) {
+                currentToken = storedToken;
+                currentUser = JSON.parse(storedUser);
+                updateAuthStatus(true);
+            } else {
+                updateAuthStatus(false);
+            }
+        }
+
+        async function login() {
+            console.log('🔑 Initiating Cognito login with PKCE...');
+
+            if (CONFIG.clientId === 'REPLACE_WITH_TB365_CLIENT_ID') {
+                alert('⚠️ Configuration needed: Please update CLIENT_ID in the script');
+                return;
+            }
+
+            try {
+                // Generate PKCE parameters (required for SPA)
+                const codeVerifier = generateCodeVerifier();
+                const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+                // Store code verifier for later use
+                sessionStorage.setItem('pkce_code_verifier', codeVerifier);
+
+                // Construct Cognito hosted UI URL (same as working TS365 app)
+                const cognitoHostedUI = `https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com`;
+                const redirectUri = 'http://localhost:5174/home.html';
+
+                // Build login URL with PKCE parameters (match working TS365 app)
+                const params = new URLSearchParams({
+                    client_id: CONFIG.clientId,
+                    response_type: 'code',
+                    scope: 'email openid',
+                    redirect_uri: redirectUri,
+                    code_challenge: codeChallenge,
+                    code_challenge_method: 'S256'
+                });
+
+                const authUrl = `${cognitoHostedUI}/login?${params.toString()}`;
+
+                console.log('🌐 Redirecting to:', authUrl);
+                window.location.href = authUrl;
+            } catch (error) {
+                console.error('Login initiation failed:', error);
+                alert('Failed to initiate login: ' + error.message);
+            }
+        }
+
+        // PKCE helper functions (copied from working TS365 app)
+        function generateCodeVerifier() {
+            const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            let result = '';
+            const randomValues = new Uint8Array(128);
+            crypto.getRandomValues(randomValues);
+
+            for (let i = 0; i < 128; i++) {
+                result += charset[randomValues[i] % charset.length];
+            }
+
+            return result;
+        }
+
+        async function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+
+            // Convert to base64url
+            return btoa(String.fromCharCode(...new Uint8Array(digest)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        function logout() {
+            console.log('🚪 Logging out...');
+
+            // Clear local storage
+            localStorage.removeItem('tb365_token');
+            localStorage.removeItem('tb365_user');
+            currentToken = null;
+            currentUser = null;
+
+            // Update UI
+            updateAuthStatus(false);
+
+            // Redirect to Cognito logout (optional)
+            if (CONFIG.clientId !== 'REPLACE_WITH_TB365_CLIENT_ID') {
+                const cognitoLogoutUrl = `https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com/logout?` +
+                    `client_id=${CONFIG.clientId}&` +
+                    `logout_uri=${encodeURIComponent(window.location.href.split('?')[0])}`;
+
+                setTimeout(() => {
+                    window.location.href = cognitoLogoutUrl;
+                }, 1000);
+            }
+        }
+
+        function simulateAuthenticatedState() {
+            // Simulate successful authentication for testing
+            const mockUser = {
+                email: 'test@templatestudio365.com',
+                sub: '12345678-1234-1234-1234-123456789012',
+                name: 'Test User'
+            };
+            const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock.token';
+
+            currentUser = mockUser;
+            currentToken = mockToken;
+
+            // Store in localStorage
+            localStorage.setItem('tb365_token', mockToken);
+            localStorage.setItem('tb365_user', JSON.stringify(mockUser));
+
+            updateAuthStatus(true);
+        }
+
+        function updateAuthStatus(isAuthenticated, errorMessage = null) {
+            if (isAuthenticated && currentUser) {
+                authStatus.className = 'status authenticated';
+                authStatus.innerHTML = '✅ Authenticated';
+
+                userInfo.style.display = 'block';
+                userDetails.innerHTML = `
+                    <strong>Email:</strong> ${currentUser.email}<br>
+                    <strong>User ID:</strong> ${currentUser.sub}<br>
+                    <strong>Name:</strong> ${currentUser.name || 'Not provided'}
+                `;
+
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
+
+                tokenDisplay.textContent = currentToken || 'No token available';
+            } else {
+                authStatus.className = 'status unauthenticated';
+                authStatus.innerHTML = errorMessage || '🔴 Not Authenticated';
+
+                userInfo.style.display = 'none';
+                loginBtn.style.display = 'inline-block';
+                logoutBtn.style.display = 'none';
+
+                tokenDisplay.textContent = 'No token available';
+            }
+        }
+
+        async function testAPI(endpoint, method, body = null) {
+            const resultId = endpoint.replace('/', '') + 'Result';
+            const resultElement = document.getElementById(resultId);
+
+            if (!currentToken) {
+                resultElement.innerHTML = '<div class="error">❌ No authentication token available</div>';
+                return;
+            }
+
+            if (CONFIG.apiBaseUrl.includes('REPLACE_WITH_API_GATEWAY_URL')) {
+                resultElement.innerHTML = '<div class="error">⚠️ API Gateway URL not configured</div>';
+                return;
+            }
+
+            try {
+                console.log(`🧪 Testing ${method} ${endpoint}...`);
+                resultElement.innerHTML = '⏳ Testing...';
+
+                const options = {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                };
+
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(CONFIG.apiBaseUrl + endpoint, options);
+                const responseText = await response.text();
+
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    result = responseText;
+                }
+
+                const statusClass = response.ok ? 'success' : 'error';
+                const statusIcon = response.ok ? '✅' : '❌';
+
+                resultElement.innerHTML = `
+                    <div class="${statusClass}">
+                        ${statusIcon} Status: ${response.status} ${response.statusText}
+                    </div>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+
+            } catch (error) {
+                console.error('API test failed:', error);
+                resultElement.innerHTML = `<div class="error">❌ Request failed: ${error.message}</div>`;
+            }
+        }
+
+        function getSampleConversionData() {
+            return {
+                tb365Data: {
+                    projectName: "Test Template",
+                    version: "1.0",
+                    canvasState: {
+                        elements: [
+                            {
+                                id: "text-1",
+                                type: "text",
+                                x: 100,
+                                y: 100,
+                                width: 200,
+                                height: 50,
+                                properties: {
+                                    text: "Hello {{name}}!",
+                                    fontSize: 24,
+                                    fontFamily: "Arial",
+                                    fill: "#000000"
+                                }
+                            }
+                        ],
+                        canvasSize: { width: 800, height: 600 }
+                    }
+                },
+                data: {
+                    name: "World"
+                }
+            };
+        }
+
+        // Handle browser back button
+        window.addEventListener('popstate', function() {
+            checkAuthenticationStatus();
+        });
+    </script>
+</body>
+</html>

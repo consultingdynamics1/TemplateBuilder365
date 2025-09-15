@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCanvasStore } from '../../stores/canvasStore';
+import { useAuth } from '../../auth';
 import type { ToolType } from '../../types/index';
 import { saveProjectFile, loadProjectFromFile, getExistingProjectNames } from '../../utils/projectFiles';
 import { SaveDialog } from '../SaveDialog/SaveDialog';
@@ -13,11 +14,11 @@ interface ToolButtonProps {
   onClick: () => void;
 }
 
-const ToolButton: React.FC<ToolButtonProps> = ({ 
-  isActive, 
-  icon, 
-  title, 
-  onClick 
+const ToolButton: React.FC<ToolButtonProps> = ({
+  isActive,
+  icon,
+  title,
+  onClick
 }) => (
   <button
     className={`tool-button ${isActive ? 'active' : ''}`}
@@ -28,6 +29,35 @@ const ToolButton: React.FC<ToolButtonProps> = ({
     <span className="tool-icon">{icon}</span>
   </button>
 );
+
+const UserInfo: React.FC = () => {
+  const { user, logout } = useAuth();
+
+  // Extract display name from user data
+  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
+  const isRealUser = user && !user.email.includes('templatebuilder365.com');
+
+  return (
+    <div className="user-info">
+      <div className="user-details">
+        <span className="user-email" title={user?.email}>
+          {displayName}
+        </span>
+        <small className="user-status">
+          {isRealUser ? 'Signed In' : 'Demo Mode'}
+        </small>
+      </div>
+      <button
+        className="logout-button"
+        onClick={logout}
+        title="Sign Out"
+        type="button"
+      >
+        🚪
+      </button>
+    </div>
+  );
+};
 
 export const Toolbar: React.FC = () => {
   const { 
@@ -334,7 +364,12 @@ export const Toolbar: React.FC = () => {
           </button>
         </div>
       </div>
-      
+
+      {/* User Section */}
+      <div className="toolbar-section user-section">
+        <UserInfo />
+      </div>
+
       <SaveDialog
         isOpen={showSaveDialog}
         currentName={currentDocumentName || 'Untitled Template'}

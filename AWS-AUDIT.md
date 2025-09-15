@@ -511,18 +511,331 @@ aws cognito-idp create-user-pool-client \
 1. Go to AWS Console → Cognito → User Pools → us-east-1_RIOPGg1Cq
 2. Click "App integration" tab
 3. Scroll to "App clients and analytics" → Click "Create app client"
-4. **App client name**: `TB365-Client`
-5. **Client secret**: Generate (enable)
-6. **Callback URLs**:
-   - `http://localhost:5174/callback`
-   - `https://templatestudio365.com/callback`
-7. **Sign-out URLs**:
-   - `http://localhost:5174/logout`
-   - `https://templatestudio365.com/logout`
-8. **OAuth 2.0 flows**: Authorization code grant
-9. **OAuth 2.0 scopes**: email, openid, profile
-10. Click "Create app client"
-11. **Copy the new Client ID and Client Secret**
+4. **App client type**: Single Page Application (SPA)
+5. **App client name**: `TB365-Client`
+6. **Client secret**: Do NOT generate (SPA doesn't use client secrets)
+7. **Callback URLs** (copy these exact URLs):
+   ```
+   http://localhost:5174/home.html
+   https://templatestudio365.com/home.html
+   https://templatestudio365.com/
+   ```
+
+**✅ Solution Found**: Type URLs manually - copy/paste can introduce hidden characters
+
+**Confirmed Working**: `http://localhost:5174/home.html` (manually typed)
+
+**✅ App Client Created Successfully**
+- **Client ID**: `3cmamjngo6rsvqrbi5ohuarji3`
+- **Type**: Single Page Application (SPA)
+- **Status**: Ready for integration
+
+**❌ Login Error Encountered:**
+```json
+{"code":"BadRequest","message":"The server did not understand the operation that was requested.","type":"client"}
+```
+
+**🔧 Required Fix: Configure Hosted UI Domain**
+
+### Step 1.5: Configure Cognito Hosted UI Domain
+```bash
+# The user pool needs a hosted UI domain configured
+# Go to AWS Console → Cognito → User Pools → us-east-1_RIOPGg1Cq
+# Click "App integration" tab → Domain section → "Actions" → "Create domain"
+```
+
+**Manual Steps via AWS Console:**
+1. Go to User Pool: us-east-1_RIOPGg1Cq
+2. Click "App integration" tab
+3. Find "Domain" section
+4. Click "Actions" → "Create domain"
+**✅ Domain Already Exists (from existing app):**
+- **Domain URL**: `https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com`
+- **Status**: Active and ready to use
+
+**❌ New Error: invalid_request**
+- **Issue**: OAuth configuration problem with app client settings
+- **Likely Cause**: App client missing OAuth configuration or incorrect flow settings
+
+**🔧 Fix Required: Update App Client OAuth Settings**
+
+### Step 1.6: Configure OAuth Settings in App Client
+**Go back to the TB365-Client app client and verify/update:**
+
+1. **Go to**: AWS Console → Cognito → User Pools → us-east-1_RIOPGg1Cq
+2. **Click**: "App integration" tab
+3. **Find**: TB365-Client in "App clients" section
+4. **Click**: TB365-Client name to edit
+5. **Verify these settings are enabled:**
+   - ✅ **OAuth 2.0 grant types**: Authorization code grant
+   - ✅ **OAuth 2.0 scopes**: email, openid, profile
+   - ✅ **Allowed callback URLs**: All URLs we added earlier
+   - ✅ **Allowed sign-out URLs**: All URLs we added earlier
+6. **Save changes** if any were missing
+
+**✅ Progress: URL Construction Working**
+- **Generated URL**: `https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com/login?client_id=3cmamjngo6rsvqrbi5ohuarji3&redirect_uri=http://localhost:5174/home.html&response_type=code&scope=email+openid+profile`
+- **New Error**: 403 Forbidden
+- **Root Cause**: App client configuration mismatch or missing hosted UI settings
+
+**🔧 Step-by-Step Fix for Existing TB365-Client:**
+
+### Detailed Configuration Steps:
+
+1. **Go to AWS Console** → Cognito → User Pools → `us-east-1_RIOPGg1Cq`
+2. **Click "App integration" tab**
+3. **Scroll to "App clients and analytics"**
+4. **Click on "TB365-Client" name** (not the edit button)
+5. **Look for "Login pages" tab** (where OAuth settings are located)
+
+### Required Settings to Verify/Fix:
+
+**✅ Found Settings Location: "Login pages" tab**
+
+**OAuth 2.0 Settings (in Login pages tab):**
+- ✅ **OAuth 2.0 grant types**:
+  - ☑️ **Authorization code grant** (MUST be checked)
+- ✅ **OAuth 2.0 scopes**:
+  - ☑️ **email** (MUST be checked)
+  - ☑️ **openid** (MUST be checked)
+  - ☑️ **profile** (MUST be checked)
+- ✅ **Allowed callback URLs**: Should contain:
+  ```
+  http://localhost:5174/home.html
+  https://templatestudio365.com/home.html
+  https://templatestudio365.com/
+  ```
+- ✅ **Allowed sign-out URLs**: Should contain:
+  ```
+  http://localhost:5174/logout
+  https://templatestudio365.com/logout
+  ```
+
+**Identity Providers:**
+- ✅ **Identity providers**:
+  - ☑️ **Cognito User Pool** (MUST be selected)
+
+6. **Click "Save changes"**
+7. **Wait 1-2 minutes** for changes to propagate
+8. **Test the login button again**
+
+**❌ Settings Already Correct - Still Getting 403**
+- OAuth 2.0 grant types: ✅ Authorization code grant (checked)
+- OAuth 2.0 scopes: ✅ email, openid, profile (checked)
+- Callback URLs: ✅ Configured correctly
+
+**🔍 Additional Troubleshooting Steps:**
+
+### Option 1: Check User Pool General Settings
+1. Go to User Pool `us-east-1_RIOPGg1Cq` main page
+2. Click **"Sign-in experience"** tab
+3. Verify **"Federated identity provider sign-in"** is enabled
+4. Check **"Attribute verification and user account confirmation"** settings
+
+### Option 2: Test with Different Callback URL
+1. Temporarily change callback URL in home.html to just: `http://localhost:5174`
+2. Test if login works with simpler callback
+3. Check if the issue is specific to `/home.html` path
+
+### Option 3: Check User Pool Domain Configuration
+1. Verify the domain `https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com` is actually active
+2. Try accessing the domain directly in browser
+3. Should show a Cognito error page, not a 404
+
+**✅ Domain Test Result:**
+- Direct access to domain: `{"message":"Missing Authentication Token"}`
+- **Status**: ✅ Domain is active and working (this error is expected)
+- **Root Cause**: The 403 issue is likely in the OAuth parameter combination
+
+**🔍 New Strategy: Compare Working vs TB365-Client**
+
+### App Client Comparison Checklist:
+
+**Step 1: Find Both App Clients**
+1. Go to User Pool `us-east-1_RIOPGg1Cq` → "App integration" tab
+2. In "App clients and analytics" section:
+   - **TB365-Client** (Client ID: `3cmamjngo6rsvqrbi5ohuarji3`) - ❌ Not working
+   - **Working Client** (Client ID: `2addji24p0obg5sqedgise13i4`) - ✅ Works for other app
+
+**Step 2: Compare Settings Side by Side**
+For each client, check these settings and tell me the differences:
+
+**Basic Settings:**
+- App client type: [SPA vs Confidential vs Public]
+- App client name
+- Client ID
+- Client secret: [Generated vs None]
+
+**Authentication Settings:**
+- Authentication flows enabled
+- User pool policy settings
+
+**OAuth Settings (Login pages tab):**
+- OAuth 2.0 grant types checked
+- OAuth 2.0 scopes selected
+- Callback URLs configured
+- Sign-out URLs configured
+
+### 🔍 **Key Differences Found in Working TemplateStudio365 Application:**
+
+**Working Configuration (Client ID: 2addji24p0obg5sqedgise13i4):**
+- **Domain**: `https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com` ✅ (Same)
+- **User Pool ID**: `us-east-1_RIOPGg1Cq` ✅ (Same)
+- **Region**: `us-east-1` ✅ (Same)
+- **OAuth Scopes**: `openid email profile` ✅ (Same as ours)
+- **Response Type**: `code` ✅ (Same as ours)
+
+**Critical Differences Discovered:**
+1. **PKCE Implementation**: Working app uses **PKCE (Proof Key for Code Exchange)**
+   - Generates `code_verifier` and `code_challenge`
+   - Uses `code_challenge_method: 'S256'`
+   - Our home.html **does NOT use PKCE**
+
+2. **OAuth URL Structure**: Working app uses `/login` endpoint:
+   - **Working URL**: `${cognitoDomain}/login?${params}`
+   - **Our URL**: `${cognitoDomain}/oauth2/authorize?${params}`
+
+3. **Required Parameters**: Working app includes PKCE parameters:
+   - `code_challenge` (required for SPA)
+   - `code_challenge_method: 'S256'` (required for SPA)
+
+**🧪 Testing with Working Client ID:**
+- **Temporarily using**: `2addji24p0obg5sqedgise13i4` (known working client)
+- **URL Generated**: `https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com/login?client_id=2addji24p0obg5sqedgise13i4&response_type=code&scope=email+openid+profile&redirect_uri=http%253A%252F%252Flocalhost%253A5174&code_challenge=gON6ymVd7FTCBo82YjbaxJh-2s6T_WHXDyysDSmYOL4&code_challenge_method=S256`
+- **Result**: 400 Bad Request - likely **callback URL mismatch**
+
+**Root Cause**: Working client expects different redirect URI from TS365 app:
+- **TS365 staging callback**: `https://d1j44ainjnbn12.cloudfront.net/dashboard.html`
+- **Our test callback**: `http://localhost:5174`
+
+**Solution**: Use TB365-Client with correct localhost callback URL
+
+**🔍 Final Troubleshooting: TB365-Client Still Not Working**
+- **PKCE URL**: `https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com/login?client_id=3cmamjngo6rsvqrbi5ohuarji3&response_type=code&scope=email+openid+profile&redirect_uri=http%253A%252F%252Flocalhost%253A5174&code_challenge=P9gNs2NbbUgSl1z0YWwxOkWYErFBamTdEFIzC_R_qfk&code_challenge_method=S256`
+- **Result**: Still not working despite correct PKCE implementation
+
+**Possible Issues with TB365-Client:**
+1. **App Client Type**: May need to be "Public client" instead of "Single page application"
+2. **Missing Authentication Flows**: SRP or Custom auth flows not enabled
+3. **Hosted UI Not Enabled**: App client may not be configured for hosted UI
+4. **Identity Provider**: "Cognito User Pool" may not be selected
+
+**Recommended Fix**: Check working client type and recreate TB365-Client with exact same settings
+
+### AWS CLI Comparison Attempt
+```bash
+# Tried to compare client configurations via AWS CLI
+aws cognito-idp describe-user-pool-client --user-pool-id us-east-1_RIOPGg1Cq --client-id 2addji24p0obg5sqedgise13i4
+aws cognito-idp describe-user-pool-client --user-pool-id us-east-1_RIOPGg1Cq --client-id 3cmamjngo6rsvqrbi5ohuarji3
+# Result: AccessDeniedException - Need cognito-idp:DescribeUserPoolClient permission
+```
+
+**IAM Permissions Needed for AWS CLI Cognito Access:**
+
+Add this policy to `templatestudio365` IAM user:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "cognito-idp:DescribeUserPool",
+                "cognito-idp:DescribeUserPoolClient",
+                "cognito-idp:ListUserPoolClients",
+                "cognito-idp:ListUserPools"
+            ],
+            "Resource": [
+                "arn:aws:cognito-idp:us-east-1:510624138860:userpool/us-east-1_RIOPGg1Cq",
+                "arn:aws:cognito-idp:us-east-1:510624138860:userpool/us-east-1_RIOPGg1Cq/*"
+            ]
+        }
+    ]
+}
+```
+
+**Steps to Add:**
+1. Go to AWS Console → IAM → Users → templatestudio365
+2. Click "Add permissions" → "Create inline policy"
+3. JSON tab → paste above policy
+4. Name: "CognitoReadAccess"
+5. Create policy
+
+**Then retry AWS CLI commands to compare client configurations**
+
+### 🔍 **AWS CLI Client Configuration Comparison Results:**
+
+**✅ Both Clients Are IDENTICAL in Critical Settings:**
+
+| Setting | Working Client (2addji24p0obg5sqedgise13i4) | TB365-Client (3cmamjngo6rsvqrbi5ohuarji3) | Status |
+|---------|------------------------------------------------|---------------------------------------------|---------|
+| **ExplicitAuthFlows** | ALLOW_REFRESH_TOKEN_AUTH, ALLOW_USER_AUTH, ALLOW_USER_SRP_AUTH | ALLOW_REFRESH_TOKEN_AUTH, ALLOW_USER_AUTH, ALLOW_USER_SRP_AUTH | ✅ Same |
+| **SupportedIdentityProviders** | COGNITO | COGNITO | ✅ Same |
+| **AllowedOAuthFlows** | code | code | ✅ Same |
+| **AllowedOAuthScopes** | email, openid, profile | email, openid, profile | ✅ Same |
+| **AllowedOAuthFlowsUserPoolClient** | true | true | ✅ Same |
+
+**🎯 Key Findings:**
+- **TB365-Client is configured correctly** - all OAuth settings match the working client
+- **Callback URLs include localhost**: `http://localhost:5174` ✅
+- **Problem is NOT in the app client configuration**
+
+**🚨 Real Issue Identified:**
+The TB365-Client configuration is **perfect**. The issue must be elsewhere - likely in our PKCE implementation or URL construction.
+
+### ✅ **AWS CLI Verification: Both Clients Have Same Scopes**
+- **Working client scopes**: `["email", "openid", "profile"]`
+- **TB365-Client scopes**: `["email", "openid", "profile"]`
+- **Status**: ✅ IDENTICAL - not the issue
+
+### 🧩 **Looking for Other Differences:**
+Since both clients are configured identically, the issue might be:
+1. **URL parameter order**
+2. **URL encoding differences**
+3. **Domain/endpoint issue**
+4. **User pool domain association**
+
+**Current 400 Error**: Need to investigate deeper into Cognito hosted UI configuration
+
+### 🔍 **Working URL vs Our URL Comparison:**
+
+**Working TS365 Staging URL:**
+```
+https://us-east-13hkrx6tkf.auth.us-east-1.amazoncognito.com/login?client_id=fvloc1s716d27ifqm9n1ofg3g&response_type=code&scope=email+openid&redirect_uri=https%3A%2F%2Ftemplatestudio365.com%2Fdashboard.html&code_challenge=GLC_LEVdRajLjx4TxuR_qwSgjitXMu2eNveoFmIQjCw&code_challenge_method=S256
+```
+
+**Our TB365 URL:**
+```
+https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com/login?client_id=3cmamjngo6rsvqrbi5ohuarji3&response_type=code&scope=email+openid+profile&redirect_uri=http%253A%252F%252Flocalhost%253A5174&code_challenge=...&code_challenge_method=S256
+```
+
+**🚨 CRITICAL DIFFERENCES FOUND:**
+1. **Different Cognito Domains**:
+   - Working: `us-east-13hkrx6tkf.auth.us-east-1.amazoncognito.com` ❌
+   - Ours: `us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com` ❌
+
+2. **Different Client IDs**:
+   - Working: `fvloc1s716d27ifqm9n1ofg3g` ❌
+   - Ours: `3cmamjngo6rsvqrbi5ohuarji3` ❌
+
+3. **Scope Difference**:
+   - Working: `scope=email+openid` ✅
+   - Ours: `scope=email+openid+profile` ❌
+
+**ROOT CAUSE**: We've been using the WRONG user pool domain and wrong client ID!
+8. **Sign-out URLs** (enter one per line, no special formatting):
+   ```
+   http://localhost:5174/logout
+   https://templatestudio365.com/logout
+   ```
+
+**Important**: Enter each URL on a separate line in the Cognito console. Do not use markdown formatting, bullets, or parentheses - just the plain URLs.
+
+**Note**: Staging URLs can be added later when staging environment is configured
+9. **OAuth 2.0 flows**: Authorization code grant
+10. **OAuth 2.0 scopes**: email, openid, profile
+11. Click "Create app client"
+12. **Copy the new Client ID** (no client secret for SPA)
 
 ### Step 2: Update Serverless Configuration
 **Once new app client is created, update serverless.yml:**
@@ -543,12 +856,36 @@ npm run deploy:dev
 # Expected: API Gateway with JWT authorizer protecting all endpoints
 ```
 
-### Step 4: Update Frontend Authentication
-**Add to TB365 React app:**
+### Step 4: Create Test Authentication Page
+**Create home.html test page for Cognito callback testing:**
+```bash
+# Create simple test page in public directory
+# File: public/home.html
+# Purpose: Test Cognito authentication flow safely before integrating with main app
+# Features: Display user info, JWT token, login/logout functionality
+```
+
+### Step 5: Update Frontend Authentication
+**Add to TB365 React app (after testing):**
 - AWS Amplify or Cognito SDK integration
 - Login/logout buttons
 - JWT token management
 - Protected route components
+- Integration with existing canvas application
+
+**Testing Strategy:**
+1. **Phase 1**: Test authentication flow with home.html (localhost)
+2. **Phase 2**: Test on production domain with home.html
+3. **Phase 3**: Integrate with React app after verification
+4. **Phase 4**: Add staging environment URLs when needed
+
+**Deployment Path:**
+- **Development**: `http://localhost:5174/home.html` (immediate testing)
+- **Production Test**: `https://templatestudio365.com/home.html` (verify on live domain)
+- **Production App**: `https://templatestudio365.com/` (main TB365 app integration)
+- **Staging**: Add staging URLs to Cognito when CloudFront staging is configured
+
+**Benefits**: Start simple with dev + production, add staging later without complexity.
 
 ---
 

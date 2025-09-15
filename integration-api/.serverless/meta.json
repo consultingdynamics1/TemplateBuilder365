@@ -1,0 +1,397 @@
+{
+  "C:\\TemplateBuilder365\\integration-api\\serverless.yml": {
+    "versionFramework": "4.18.2",
+    "servicePath": "C:\\TemplateBuilder365\\integration-api\\serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "tb365-converter-api",
+      "frameworkVersion": "4",
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs18.x",
+        "region": "us-east-1",
+        "stage": "dev",
+        "environment": {
+          "STAGE": "${self:provider.stage}",
+          "REGION": "${self:provider.region}",
+          "TB365_BUCKET": "tb365-designs-${self:provider.stage}",
+          "API_TEMPLATE_BUCKET": "apitemplate-exports-${self:provider.stage}",
+          "DEV_BUCKET": "TemplateBuilder365-${self:provider.stage}",
+          "NODE_ENV": "${self:provider.stage}",
+          "OUTPUT_MODE": "${env:OUTPUT_MODE, 'response-only'}",
+          "LOCAL_OUTPUT_DIR": "${env:LOCAL_OUTPUT_DIR, '/tmp/test-output'}",
+          "COGNITO_USER_POOL_ID": "us-east-1_RIOPGg1Cq",
+          "COGNITO_CLIENT_ID": "2addji24p0obg5sqedgise13i4"
+        },
+        "httpApi": {
+          "authorizers": {
+            "cognitoAuthorizer": {
+              "type": "jwt",
+              "identitySource": "$request.header.Authorization",
+              "issuerUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_RIOPGg1Cq",
+              "audience": [
+                "2addji24p0obg5sqedgise13i4"
+              ]
+            }
+          }
+        },
+        "iamRoleStatements": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "s3:GetObject",
+              "s3:PutObject",
+              "s3:DeleteObject"
+            ],
+            "Resource": [
+              "arn:aws:s3:::tb365-designs-${self:provider.stage}/*",
+              "arn:aws:s3:::apitemplate-exports-${self:provider.stage}/*",
+              "arn:aws:s3:::TemplateBuilder365-${self:provider.stage}/*"
+            ]
+          },
+          {
+            "Effect": "Allow",
+            "Action": [
+              "s3:ListBucket"
+            ],
+            "Resource": [
+              "arn:aws:s3:::tb365-designs-${self:provider.stage}",
+              "arn:aws:s3:::apitemplate-exports-${self:provider.stage}",
+              "arn:aws:s3:::TemplateBuilder365-${self:provider.stage}"
+            ]
+          }
+        ]
+      },
+      "functions": {
+        "convertTb365ToApiTemplate": {
+          "handler": "functions/tb365-converter.handler",
+          "timeout": 30,
+          "memorySize": 512,
+          "events": [
+            {
+              "httpApi": {
+                "path": "/convert",
+                "method": "post",
+                "authorizer": {
+                  "name": "cognitoAuthorizer"
+                },
+                "cors": {
+                  "allowOrigin": "*",
+                  "allowHeaders": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization"
+                  ],
+                  "allowMethods": [
+                    "POST",
+                    "OPTIONS"
+                  ]
+                }
+              }
+            },
+            {
+              "httpApi": {
+                "path": "/convert/{id}",
+                "method": "get",
+                "authorizer": {
+                  "name": "cognitoAuthorizer"
+                },
+                "cors": {
+                  "allowOrigin": "*",
+                  "allowHeaders": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization"
+                  ],
+                  "allowMethods": [
+                    "GET",
+                    "OPTIONS"
+                  ]
+                }
+              }
+            },
+            {
+              "httpApi": {
+                "path": "/output-config",
+                "method": "get",
+                "authorizer": {
+                  "name": "cognitoAuthorizer"
+                },
+                "cors": {
+                  "allowOrigin": "*",
+                  "allowHeaders": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization"
+                  ],
+                  "allowMethods": [
+                    "GET",
+                    "OPTIONS"
+                  ]
+                }
+              }
+            },
+            {
+              "httpApi": {
+                "path": "/output-config",
+                "method": "post",
+                "authorizer": {
+                  "name": "cognitoAuthorizer"
+                },
+                "cors": {
+                  "allowOrigin": "*",
+                  "allowHeaders": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization"
+                  ],
+                  "allowMethods": [
+                    "POST",
+                    "OPTIONS"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "healthCheck": {
+          "handler": "functions/tb365-converter.health",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/health",
+                "method": "get"
+              }
+            }
+          ]
+        }
+      },
+      "resources": {
+        "Resources": {
+          "Tb365DesignsBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "tb365-designs-${self:provider.stage}",
+              "VersioningConfiguration": {
+                "Status": "Enabled"
+              },
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "CorsConfiguration": {
+                "CorsRules": [
+                  {
+                    "AllowedOrigins": [
+                      "*"
+                    ],
+                    "AllowedHeaders": [
+                      "*"
+                    ],
+                    "AllowedMethods": [
+                      "GET",
+                      "PUT",
+                      "POST",
+                      "DELETE",
+                      "HEAD"
+                    ],
+                    "MaxAge": 3000
+                  }
+                ]
+              }
+            }
+          },
+          "ApiTemplateExportsBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "apitemplate-exports-${self:provider.stage}",
+              "VersioningConfiguration": {
+                "Status": "Enabled"
+              },
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "CorsConfiguration": {
+                "CorsRules": [
+                  {
+                    "AllowedOrigins": [
+                      "*"
+                    ],
+                    "AllowedHeaders": [
+                      "*"
+                    ],
+                    "AllowedMethods": [
+                      "GET",
+                      "PUT",
+                      "POST",
+                      "DELETE",
+                      "HEAD"
+                    ],
+                    "MaxAge": 3000
+                  }
+                ]
+              }
+            }
+          },
+          "DevBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "TemplateBuilder365-${self:provider.stage}",
+              "VersioningConfiguration": {
+                "Status": "Enabled"
+              },
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "CorsConfiguration": {
+                "CorsRules": [
+                  {
+                    "AllowedOrigins": [
+                      "*"
+                    ],
+                    "AllowedHeaders": [
+                      "*"
+                    ],
+                    "AllowedMethods": [
+                      "GET",
+                      "PUT",
+                      "POST",
+                      "DELETE",
+                      "HEAD"
+                    ],
+                    "MaxAge": 3000
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ApiGatewayRestApiId": {
+            "Value": {
+              "Ref": "HttpApi"
+            },
+            "Export": {
+              "Name": "${self:service}-${self:provider.stage}-HttpApiId"
+            }
+          },
+          "ApiGatewayRestApiRootResourceId": {
+            "Value": {
+              "Fn::GetAtt": [
+                "HttpApi",
+                "RootResourceId"
+              ]
+            },
+            "Export": {
+              "Name": "${self:service}-${self:provider.stage}-HttpApiRootResourceId"
+            }
+          },
+          "ServiceEndpoint": {
+            "Description": "URL of the service endpoint",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Ref": "HttpApi"
+                  },
+                  ".execute-api.",
+                  "${self:provider.region}",
+                  ".amazonaws.com"
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "plugins": [
+        "serverless-offline"
+      ],
+      "custom": {
+        "serverless-offline": {
+          "httpPort": 3001,
+          "host": "0.0.0.0"
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs18.x",
+      "region": "us-east-1",
+      "stage": "dev",
+      "environment": {
+        "STAGE": "${self:provider.stage}",
+        "REGION": "${self:provider.region}",
+        "TB365_BUCKET": "tb365-designs-${self:provider.stage}",
+        "API_TEMPLATE_BUCKET": "apitemplate-exports-${self:provider.stage}",
+        "DEV_BUCKET": "TemplateBuilder365-${self:provider.stage}",
+        "NODE_ENV": "${self:provider.stage}",
+        "OUTPUT_MODE": "${env:OUTPUT_MODE, 'response-only'}",
+        "LOCAL_OUTPUT_DIR": "${env:LOCAL_OUTPUT_DIR, '/tmp/test-output'}",
+        "COGNITO_USER_POOL_ID": "us-east-1_RIOPGg1Cq",
+        "COGNITO_CLIENT_ID": "2addji24p0obg5sqedgise13i4"
+      },
+      "httpApi": {
+        "authorizers": {
+          "cognitoAuthorizer": {
+            "type": "jwt",
+            "identitySource": "$request.header.Authorization",
+            "issuerUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_RIOPGg1Cq",
+            "audience": [
+              "2addji24p0obg5sqedgise13i4"
+            ]
+          }
+        }
+      },
+      "iamRoleStatements": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:GetObject",
+            "s3:PutObject",
+            "s3:DeleteObject"
+          ],
+          "Resource": [
+            "arn:aws:s3:::tb365-designs-${self:provider.stage}/*",
+            "arn:aws:s3:::apitemplate-exports-${self:provider.stage}/*",
+            "arn:aws:s3:::TemplateBuilder365-${self:provider.stage}/*"
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:ListBucket"
+          ],
+          "Resource": [
+            "arn:aws:s3:::tb365-designs-${self:provider.stage}",
+            "arn:aws:s3:::apitemplate-exports-${self:provider.stage}",
+            "arn:aws:s3:::TemplateBuilder365-${self:provider.stage}"
+          ]
+        }
+      ]
+    },
+    "error": {
+      "message": "You must sign in or use a license key with Serverless Framework V.4 and later versions. Please use \"serverless login\".",
+      "stack": "Error: You must sign in or use a license key with Serverless Framework V.4 and later versions. Please use \"serverless login\".\n    at Authentication.getAuthenticatedData (file:///C:/Users/KEYST/.serverless/releases/4.18.2/package/dist/sf-core.js:806:10899)\n    at async Authentication.authenticate (file:///C:/Users/KEYST/.serverless/releases/4.18.2/package/dist/sf-core.js:808:22245)\n    at async _CoreRunner.authenticate (file:///C:/Users/KEYST/.serverless/releases/4.18.2/package/dist/sf-core.js:812:2711)\n    at async _CoreRunner.run (file:///C:/Users/KEYST/.serverless/releases/4.18.2/package/dist/sf-core.js:1126:6467)\n    at async route (file:///C:/Users/KEYST/.serverless/releases/4.18.2/package/dist/sf-core.js:1603:2878)\n    at async Object.run (file:///C:/Users/KEYST/.serverless/releases/4.18.2/package/dist/sf-core.js:1604:3661)\n    at async run2 (file:///C:/Users/KEYST/.serverless/releases/4.18.2/package/dist/sf-core.js:1604:4815)"
+    },
+    "serviceRawFile": "service: tb365-converter-api\n\nframeworkVersion: '4'\n\nprovider:\n  name: aws\n  runtime: nodejs18.x\n  region: ${opt:region, 'us-east-1'}\n  stage: ${opt:stage, 'dev'}\n  environment:\n    STAGE: ${self:provider.stage}\n    REGION: ${self:provider.region}\n    TB365_BUCKET: tb365-designs-${self:provider.stage}\n    API_TEMPLATE_BUCKET: apitemplate-exports-${self:provider.stage}\n    DEV_BUCKET: TemplateBuilder365-${self:provider.stage}\n    # Removed API_KEY - now using Cognito JWT\n    NODE_ENV: ${self:provider.stage}\n    OUTPUT_MODE: ${env:OUTPUT_MODE, 'response-only'}\n    LOCAL_OUTPUT_DIR: ${env:LOCAL_OUTPUT_DIR, '/tmp/test-output'}\n    COGNITO_USER_POOL_ID: us-east-1_RIOPGg1Cq\n    COGNITO_CLIENT_ID: 2addji24p0obg5sqedgise13i4\n  httpApi:\n    authorizers:\n      cognitoAuthorizer:\n        type: jwt\n        identitySource: $request.header.Authorization\n        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_RIOPGg1Cq\n        audience:\n          - 2addji24p0obg5sqedgise13i4\n  iamRoleStatements:\n    - Effect: Allow\n      Action:\n        - s3:GetObject\n        - s3:PutObject\n        - s3:DeleteObject\n      Resource: \n        - \"arn:aws:s3:::tb365-designs-${self:provider.stage}/*\"\n        - \"arn:aws:s3:::apitemplate-exports-${self:provider.stage}/*\"\n        - \"arn:aws:s3:::TemplateBuilder365-${self:provider.stage}/*\"\n    - Effect: Allow\n      Action:\n        - s3:ListBucket\n      Resource: \n        - \"arn:aws:s3:::tb365-designs-${self:provider.stage}\"\n        - \"arn:aws:s3:::apitemplate-exports-${self:provider.stage}\"\n        - \"arn:aws:s3:::TemplateBuilder365-${self:provider.stage}\"\n\nfunctions:\n  convertTb365ToApiTemplate:\n    handler: functions/tb365-converter.handler\n    timeout: 30\n    memorySize: 512\n    events:\n      - httpApi:\n          path: /convert\n          method: post\n          authorizer:\n            name: cognitoAuthorizer\n          cors:\n            allowOrigin: '*'\n            allowHeaders:\n              - Content-Type\n              - X-Amz-Date\n              - Authorization\n            allowMethods:\n              - POST\n              - OPTIONS\n      - httpApi:\n          path: /convert/{id}\n          method: get\n          authorizer:\n            name: cognitoAuthorizer\n          cors:\n            allowOrigin: '*'\n            allowHeaders:\n              - Content-Type\n              - X-Amz-Date\n              - Authorization\n            allowMethods:\n              - GET\n              - OPTIONS\n      - httpApi:\n          path: /output-config\n          method: get\n          authorizer:\n            name: cognitoAuthorizer\n          cors:\n            allowOrigin: '*'\n            allowHeaders:\n              - Content-Type\n              - X-Amz-Date\n              - Authorization\n            allowMethods:\n              - GET\n              - OPTIONS\n      - httpApi:\n          path: /output-config\n          method: post\n          authorizer:\n            name: cognitoAuthorizer\n          cors:\n            allowOrigin: '*'\n            allowHeaders:\n              - Content-Type\n              - X-Amz-Date\n              - Authorization\n            allowMethods:\n              - POST\n              - OPTIONS\n  \n  healthCheck:\n    handler: functions/tb365-converter.health\n    events:\n      - httpApi:\n          path: /health\n          method: get\n\nresources:\n  Resources:\n    Tb365DesignsBucket:\n      Type: AWS::S3::Bucket\n      Properties:\n        BucketName: tb365-designs-${self:provider.stage}\n        VersioningConfiguration:\n          Status: Enabled\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          BlockPublicPolicy: true\n          IgnorePublicAcls: true\n          RestrictPublicBuckets: true\n        CorsConfiguration:\n          CorsRules:\n            - AllowedOrigins:\n                - '*'\n              AllowedHeaders:\n                - '*'\n              AllowedMethods:\n                - GET\n                - PUT\n                - POST\n                - DELETE\n                - HEAD\n              MaxAge: 3000\n\n    ApiTemplateExportsBucket:\n      Type: AWS::S3::Bucket\n      Properties:\n        BucketName: apitemplate-exports-${self:provider.stage}\n        VersioningConfiguration:\n          Status: Enabled\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          BlockPublicPolicy: true\n          IgnorePublicAcls: true\n          RestrictPublicBuckets: true\n        CorsConfiguration:\n          CorsRules:\n            - AllowedOrigins:\n                - '*'\n              AllowedHeaders:\n                - '*'\n              AllowedMethods:\n                - GET\n                - PUT\n                - POST\n                - DELETE\n                - HEAD\n              MaxAge: 3000\n\n    DevBucket:\n      Type: AWS::S3::Bucket\n      Properties:\n        BucketName: TemplateBuilder365-${self:provider.stage}\n        VersioningConfiguration:\n          Status: Enabled\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          BlockPublicPolicy: true\n          IgnorePublicAcls: true\n          RestrictPublicBuckets: true\n        CorsConfiguration:\n          CorsRules:\n            - AllowedOrigins:\n                - '*'\n              AllowedHeaders:\n                - '*'\n              AllowedMethods:\n                - GET\n                - PUT\n                - POST\n                - DELETE\n                - HEAD\n              MaxAge: 3000\n\n  Outputs:\n    ApiGatewayRestApiId:\n      Value:\n        Ref: HttpApi\n      Export:\n        Name: ${self:service}-${self:provider.stage}-HttpApiId\n    \n    ApiGatewayRestApiRootResourceId:\n      Value:\n        Fn::GetAtt:\n          - HttpApi\n          - RootResourceId\n      Export:\n        Name: ${self:service}-${self:provider.stage}-HttpApiRootResourceId\n    \n    ServiceEndpoint:\n      Description: URL of the service endpoint\n      Value:\n        Fn::Join:\n          - ''\n          - - 'https://'\n            - Ref: HttpApi\n            - '.execute-api.'\n            - ${self:provider.region}\n            - '.amazonaws.com'\n\nplugins:\n  - serverless-offline\n\ncustom:\n  serverless-offline:\n    httpPort: 3001\n    host: 0.0.0.0",
+    "command": [
+      "login"
+    ],
+    "options": {},
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}

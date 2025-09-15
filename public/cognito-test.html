@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognito Authentication Test Harness</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .config-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.test {
+            background: #28a745;
+        }
+        .button.test:hover {
+            background: #218838;
+        }
+        .button.danger {
+            background: #dc3545;
+        }
+        .button.danger:hover {
+            background: #c82333;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        .url-test {
+            word-break: break-all;
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .diff {
+            background: #fff3cd;
+        }
+        .match {
+            background: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Cognito Authentication Test Harness</h1>
+            <p>Comprehensive debugging tool for TB365 Cognito integration</p>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Configuration Comparison</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Working TS365 (2addji24...)</th>
+                        <th>TB365-Client (3cmamjng...)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="configComparison">
+                    <tr>
+                        <td>User Pool ID</td>
+                        <td>us-east-1_RIOPGg1Cq</td>
+                        <td>us-east-1_RIOPGg1Cq</td>
+                        <td class="match">✅ Match</td>
+                    </tr>
+                    <tr>
+                        <td>Domain</td>
+                        <td>us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com</td>
+                        <td>us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com</td>
+                        <td class="match">✅ Match</td>
+                    </tr>
+                    <tr>
+                        <td>Client ID</td>
+                        <td>2addji24p0obg5sqedgise13i4</td>
+                        <td>3cmamjngo6rsvqrbi5ohuarji3</td>
+                        <td class="diff">⚠️ Different</td>
+                    </tr>
+                    <tr>
+                        <td>Scope (Config)</td>
+                        <td>email, openid, profile</td>
+                        <td>email, openid, profile</td>
+                        <td class="match">✅ Match</td>
+                    </tr>
+                    <tr>
+                        <td>Scope (Request)</td>
+                        <td>email openid</td>
+                        <td>email openid</td>
+                        <td class="match">✅ Match</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 URL Generation Tests</h3>
+
+            <h4>Working TS365 URL Pattern:</h4>
+            <div class="url-test" id="workingUrl">
+                https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com/login?client_id=2addji24p0obg5sqedgise13i4&response_type=code&scope=email+openid&redirect_uri=https%3A%2F%2Fd1j44ainjnbn12.cloudfront.net%2Fdashboard.html&code_challenge=ECj_BjEypwl2wXoD8IpvMsf5V8VpXiUdSAiMIlPK_B8&code_challenge_method=S256
+            </div>
+
+            <h4>Generated TB365 URL:</h4>
+            <div class="url-test" id="generatedUrl">Click "Generate URL" to create</div>
+
+            <h4>Parameter Breakdown:</h4>
+            <div id="parameterBreakdown" class="config-display">Click "Generate URL" to analyze parameters</div>
+
+            <button id="generateUrlBtn" class="button test">Generate URL</button>
+            <button id="testUrlBtn" class="button" disabled>Test Generated URL</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 PKCE Parameter Analysis</h3>
+            <div id="pkceAnalysis" class="config-display">
+                <strong>Code Verifier Length:</strong> <span id="verifierLength">-</span><br>
+                <strong>Code Challenge:</strong> <span id="challengePreview">-</span><br>
+                <strong>Challenge Method:</strong> S256<br>
+                <strong>Entropy Check:</strong> <span id="entropyCheck">-</span>
+            </div>
+            <button id="testPkceBtn" class="button test">Test PKCE Generation</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🌐 Browser Environment Check</h3>
+            <div id="browserCheck" class="result">
+                <strong>User Agent:</strong> <span id="userAgent"></span><br>
+                <strong>Current URL:</strong> <span id="currentUrl"></span><br>
+                <strong>Protocol:</strong> <span id="protocol"></span><br>
+                <strong>Host:</strong> <span id="host"></span><br>
+                <strong>Crypto Support:</strong> <span id="cryptoSupport"></span><br>
+                <strong>Storage Support:</strong> <span id="storageSupport"></span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚀 Live Authentication Tests</h3>
+
+            <div style="margin: 20px 0;">
+                <h4>Test 1: Working TS365 Client ID</h4>
+                <button id="testWorkingClientBtn" class="button test">Test with Working Client (2addji24...)</button>
+                <div id="workingClientResult" class="result">Ready to test</div>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <h4>Test 2: TB365 Client ID</h4>
+                <button id="testTb365ClientBtn" class="button test">Test with TB365 Client (3cmamjng...)</button>
+                <div id="tb365ClientResult" class="result">Ready to test</div>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <h4>Test 3: Different Scopes</h4>
+                <button id="testScopeVariationsBtn" class="button test">Test Scope Variations</button>
+                <div id="scopeVariationsResult" class="result">Ready to test</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Results Log</h3>
+            <button id="clearLogBtn" class="button danger">Clear Log</button>
+            <div id="testLog" class="result">
+                Test harness initialized. Ready for testing.<br>
+                <strong>Timestamp:</strong> <span id="initTime"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            userPoolId: 'us-east-1_RIOPGg1Cq',
+            workingClientId: '2addji24p0obg5sqedgise13i4',
+            tb365ClientId: '2addji24p0obg5sqedgise13i4', // Using working client for now
+            region: 'us-east-1',
+            cognitoDomain: 'https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com',
+            redirectUris: {
+                working: 'https://d1j44ainjnbn12.cloudfront.net/dashboard.html',
+                tb365: 'http://localhost:5174/home.html',
+                testHarness: 'http://localhost:5174/home.html'
+            }
+        };
+
+        // UI Elements
+        const elements = {
+            generatedUrl: document.getElementById('generatedUrl'),
+            parameterBreakdown: document.getElementById('parameterBreakdown'),
+            pkceAnalysis: document.getElementById('pkceAnalysis'),
+            testLog: document.getElementById('testLog'),
+            browserCheck: document.getElementById('browserCheck')
+        };
+
+        let currentCodeVerifier = null;
+        let currentCodeChallenge = null;
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            logMessage('🚀 Test harness loaded');
+            document.getElementById('initTime').textContent = new Date().toLocaleString();
+            updateBrowserInfo();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('generateUrlBtn').addEventListener('click', generateTestUrl);
+            document.getElementById('testUrlBtn').addEventListener('click', testGeneratedUrl);
+            document.getElementById('testPkceBtn').addEventListener('click', testPkceGeneration);
+            document.getElementById('testWorkingClientBtn').addEventListener('click', () => testAuthentication('working'));
+            document.getElementById('testTb365ClientBtn').addEventListener('click', () => testAuthentication('tb365'));
+            document.getElementById('testScopeVariationsBtn').addEventListener('click', testScopeVariations);
+            document.getElementById('clearLogBtn').addEventListener('click', clearLog);
+        }
+
+        function updateBrowserInfo() {
+            document.getElementById('userAgent').textContent = navigator.userAgent;
+            document.getElementById('currentUrl').textContent = window.location.href;
+            document.getElementById('protocol').textContent = window.location.protocol;
+            document.getElementById('host').textContent = window.location.host;
+            document.getElementById('cryptoSupport').textContent = typeof crypto !== 'undefined' && crypto.subtle ? '✅ Available' : '❌ Missing';
+            document.getElementById('storageSupport').textContent = typeof Storage !== 'undefined' ? '✅ Available' : '❌ Missing';
+        }
+
+        async function generateTestUrl() {
+            logMessage('🔧 Generating test URL...');
+
+            try {
+                // Generate PKCE parameters
+                currentCodeVerifier = generateCodeVerifier();
+                currentCodeChallenge = await generateCodeChallenge(currentCodeVerifier);
+
+                // Update PKCE analysis
+                document.getElementById('verifierLength').textContent = currentCodeVerifier.length;
+                document.getElementById('challengePreview').textContent = currentCodeChallenge.substring(0, 20) + '...';
+                document.getElementById('entropyCheck').textContent = currentCodeVerifier.length >= 43 ? '✅ Valid' : '❌ Too short';
+
+                // Build URL
+                const params = new URLSearchParams({
+                    client_id: CONFIG.tb365ClientId,
+                    response_type: 'code',
+                    scope: 'email openid',
+                    redirect_uri: CONFIG.redirectUris.testHarness,
+                    code_challenge: currentCodeChallenge,
+                    code_challenge_method: 'S256'
+                });
+
+                const authUrl = `${CONFIG.cognitoDomain}/login?${params.toString()}`;
+                elements.generatedUrl.textContent = authUrl;
+
+                // Analyze parameters
+                const breakdown = `
+client_id: ${CONFIG.tb365ClientId}
+response_type: code
+scope: email openid
+redirect_uri: ${CONFIG.redirectUris.testHarness}
+code_challenge: ${currentCodeChallenge}
+code_challenge_method: S256
+
+URL Length: ${authUrl.length} characters
+PKCE Verifier Length: ${currentCodeVerifier.length} characters
+PKCE Challenge Length: ${currentCodeChallenge.length} characters
+                `.trim();
+
+                elements.parameterBreakdown.textContent = breakdown;
+                document.getElementById('testUrlBtn').disabled = false;
+
+                logMessage('✅ URL generated successfully');
+            } catch (error) {
+                logMessage(`❌ URL generation failed: ${error.message}`);
+            }
+        }
+
+        function testGeneratedUrl() {
+            if (!elements.generatedUrl.textContent || elements.generatedUrl.textContent === 'Click "Generate URL" to create') {
+                logMessage('❌ No URL generated yet');
+                return;
+            }
+
+            logMessage('🌐 Testing generated URL...');
+            window.open(elements.generatedUrl.textContent, '_blank');
+        }
+
+        async function testAuthentication(type) {
+            logMessage(`🔑 Testing ${type} authentication...`);
+
+            const clientId = type === 'working' ? CONFIG.workingClientId : CONFIG.tb365ClientId;
+            const redirectUri = type === 'working' ? CONFIG.redirectUris.working : CONFIG.redirectUris.testHarness;
+            const resultElement = document.getElementById(`${type}ClientResult`);
+
+            try {
+                const codeVerifier = generateCodeVerifier();
+                const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+                const params = new URLSearchParams({
+                    client_id: clientId,
+                    response_type: 'code',
+                    scope: 'email openid',
+                    redirect_uri: redirectUri,
+                    code_challenge: codeChallenge,
+                    code_challenge_method: 'S256'
+                });
+
+                const authUrl = `${CONFIG.cognitoDomain}/login?${params.toString()}`;
+
+                // Special test for TB365 - try with working redirect URI
+                let alternativeUrl = '';
+                if (type === 'tb365') {
+                    const altParams = new URLSearchParams({
+                        client_id: clientId,
+                        response_type: 'code',
+                        scope: 'email openid',
+                        redirect_uri: CONFIG.redirectUris.working,
+                        code_challenge: codeChallenge,
+                        code_challenge_method: 'S256'
+                    });
+                    alternativeUrl = `${CONFIG.cognitoDomain}/login?${altParams.toString()}`;
+                }
+
+                resultElement.innerHTML = `
+                    <strong>Generated URL:</strong><br>
+                    <div style="word-break: break-all; margin: 10px 0; padding: 10px; background: #e9ecef; border-radius: 4px;">
+                        ${authUrl}
+                    </div>
+                    <button onclick="window.open('${authUrl}', '_blank')" class="button">Open in New Tab</button>
+                    ${alternativeUrl ? `
+                        <br><br><strong>Alternative (with working redirect URI):</strong><br>
+                        <div style="word-break: break-all; margin: 10px 0; padding: 10px; background: #fff3cd; border-radius: 4px;">
+                            ${alternativeUrl}
+                        </div>
+                        <button onclick="window.open('${alternativeUrl}', '_blank')" class="button" style="background: #ffc107; color: #000;">Test Alternative</button>
+                    ` : ''}
+                `;
+
+                logMessage(`✅ ${type} URL generated - length: ${authUrl.length}`);
+            } catch (error) {
+                resultElement.innerHTML = `<div class="error">❌ Failed: ${error.message}</div>`;
+                logMessage(`❌ ${type} test failed: ${error.message}`);
+            }
+        }
+
+        async function testScopeVariations() {
+            logMessage('🔬 Testing scope variations...');
+            const resultElement = document.getElementById('scopeVariationsResult');
+
+            const scopes = [
+                'email openid',
+                'email openid profile',
+                'openid email',
+                'openid email profile',
+                'email',
+                'openid'
+            ];
+
+            let html = '<strong>Scope Variation Tests:</strong><br>';
+
+            for (const scope of scopes) {
+                try {
+                    const codeVerifier = generateCodeVerifier();
+                    const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+                    const params = new URLSearchParams({
+                        client_id: CONFIG.tb365ClientId,
+                        response_type: 'code',
+                        scope: scope,
+                        redirect_uri: CONFIG.redirectUris.testHarness,
+                        code_challenge: codeChallenge,
+                        code_challenge_method: 'S256'
+                    });
+
+                    const authUrl = `${CONFIG.cognitoDomain}/login?${params.toString()}`;
+
+                    html += `
+                        <div style="margin: 10px 0; padding: 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+                            <strong>Scope:</strong> "${scope}"<br>
+                            <button onclick="window.open('${authUrl}', '_blank')" class="button" style="margin-top: 5px;">Test This Scope</button>
+                        </div>
+                    `;
+                } catch (error) {
+                    html += `<div class="error">❌ Failed for scope "${scope}": ${error.message}</div>`;
+                }
+            }
+
+            resultElement.innerHTML = html;
+            logMessage('✅ Scope variations generated');
+        }
+
+        function testPkceGeneration() {
+            logMessage('🔒 Testing PKCE generation...');
+
+            try {
+                for (let i = 0; i < 5; i++) {
+                    const verifier = generateCodeVerifier();
+                    logMessage(`PKCE Test ${i + 1}: Length=${verifier.length}, Sample=${verifier.substring(0, 20)}...`);
+                }
+                logMessage('✅ PKCE generation tests completed');
+            } catch (error) {
+                logMessage(`❌ PKCE test failed: ${error.message}`);
+            }
+        }
+
+        // PKCE helper functions (same as original)
+        function generateCodeVerifier() {
+            const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            let result = '';
+            const randomValues = new Uint8Array(128);
+            crypto.getRandomValues(randomValues);
+
+            for (let i = 0; i < 128; i++) {
+                result += charset[randomValues[i] % charset.length];
+            }
+
+            return result;
+        }
+
+        async function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+
+            return btoa(String.fromCharCode(...new Uint8Array(digest)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        function logMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            elements.testLog.innerHTML += `<br>${logEntry}`;
+            elements.testLog.scrollTop = elements.testLog.scrollHeight;
+            console.log(logEntry);
+        }
+
+        function clearLog() {
+            elements.testLog.innerHTML = 'Log cleared.<br>';
+            logMessage('🧹 Test log cleared');
+        }
+
+        // Handle OAuth callback
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const authCode = urlParams.get('code');
+            const error = urlParams.get('error');
+
+            if (error) {
+                logMessage(`❌ OAuth Error: ${error}`);
+                const errorDescription = urlParams.get('error_description');
+                if (errorDescription) {
+                    logMessage(`📝 Error Description: ${errorDescription}`);
+                }
+            }
+
+            if (authCode) {
+                logMessage(`✅ OAuth Success: Authorization code received`);
+                logMessage(`📝 Code Preview: ${authCode.substring(0, 20)}...`);
+
+                // Show success message
+                const successDiv = document.createElement('div');
+                successDiv.className = 'test-section success';
+                successDiv.innerHTML = `
+                    <h3>🎉 Authentication Successful!</h3>
+                    <p><strong>Authorization Code:</strong> ${authCode.substring(0, 30)}...</p>
+                    <p><strong>Full URL:</strong> ${window.location.href}</p>
+                    <p>This means the Cognito authentication flow is working correctly!</p>
+                `;
+                document.querySelector('.container').insertBefore(successDiv, document.querySelector('.container').firstChild);
+            }
+        });
+    </script>
+</body>
+</html>
