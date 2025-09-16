@@ -1,0 +1,10 @@
+{
+  "ENVIRONMENT": "stage",
+  "ENABLE_AUTH": "true",
+  "S3_BUCKET": "templatebuilder365-user-data",
+  "AWS_REGION": "us-east-1",
+  "API_ENDPOINT": "https://api-stage.templatebuilder365.com",
+  "COGNITO_USER_POOL_ID": "us-east-1_RIOPGg1Cq",
+  "COGNITO_CLIENT_ID": "2addji24p0obg5sqedgise13i4",
+  "COGNITO_DOMAIN": "us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com"
+}

@@ -4,8 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run build:dev && vite",
     "build": "tsc -b && vite build",
+    "build:dev": "node scripts/replace-variables.js development",
+    "build:stage": "npm run restore && node scripts/replace-variables.js stage && npm run build",
+    "build:prod": "npm run restore && node scripts/replace-variables.js production && npm run build",
+    "restore": "node scripts/restore-templates.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

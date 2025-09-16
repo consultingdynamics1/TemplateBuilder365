@@ -36,21 +36,42 @@ export function createProjectFile(
 }
 
 /**
- * Save project file (browser download fallback for now)
+ * Save project file with "Save As" dialog
  */
 export async function saveProjectFile(
-  projectName: string, 
+  projectName: string,
   canvasState: CanvasState
 ): Promise<string> {
   const filename = generateProjectFilename(projectName);
   const projectData = createProjectFile(projectName, canvasState);
-  
-  // For now, we'll use browser download
-  // Later this can be enhanced with server-side saving or cloud storage
+
+  try {
+    // Try to use the modern File System Access API (Chrome, Edge)
+    if ('showSaveFilePicker' in window) {
+      const fileHandle = await (window as any).showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: 'TemplateBuilder365 files',
+          accept: { 'application/json': ['.tb365'] }
+        }]
+      });
+
+      const writable = await fileHandle.createWritable();
+      await writable.write(JSON.stringify(projectData, null, 2));
+      await writable.close();
+
+      return fileHandle.name;
+    }
+  } catch (error) {
+    // User cancelled or API not supported, fall back to download
+    console.log('File picker cancelled or not supported, using download fallback');
+  }
+
+  // Fallback: browser download for browsers that don't support File System Access API
   const blob = new Blob([JSON.stringify(projectData, null, 2)], {
     type: 'application/json'
   });
-  
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -58,7 +79,7 @@ export async function saveProjectFile(
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  
+
   URL.revokeObjectURL(url);
   return filename;
 }

@@ -60,11 +60,11 @@ const UserInfo: React.FC = () => {
 };
 
 export const Toolbar: React.FC = () => {
-  const { 
-    activeTool, 
-    setActiveTool, 
-    selectedElementId, 
-    deleteElement, 
+  const {
+    activeTool,
+    setActiveTool,
+    selectedElementId,
+    deleteElement,
     duplicateElement,
     bringToFront,
     sendToBack,
@@ -73,6 +73,7 @@ export const Toolbar: React.FC = () => {
     fitToScreen,
     snapToGrid,
     toggleSnapToGrid,
+    clearCanvas,
     loadCanvasState,
     // Get complete canvas state for saving
     elements,
@@ -133,6 +134,12 @@ export const Toolbar: React.FC = () => {
 
   const handleLoadProject = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleNewProject = () => {
+    if (confirm('Create a new document? This will clear the current canvas.')) {
+      clearCanvas();
+    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,6 +240,14 @@ export const Toolbar: React.FC = () => {
       {/* Save/Load Section */}
       <div className="toolbar-section">
         <div className="tool-group">
+          <button
+            className="tool-button"
+            onClick={handleNewProject}
+            title="New Document (Clear Canvas)"
+            type="button"
+          >
+            <span className="tool-icon">📄</span>
+          </button>
           <button
             className="tool-button"
             onClick={handleSaveProject}

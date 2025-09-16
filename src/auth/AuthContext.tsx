@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { CONFIG, isAuthEnabled } from '../config/environment';
 
-// Configuration - matches our working authentication setup
+// Environment-aware configuration
 const AUTH_CONFIG = {
-  userPoolId: 'us-east-1_RIOPGg1Cq',
-  clientId: '2addji24p0obg5sqedgise13i4', // Working TemplateStudio365-Staging client
-  region: 'us-east-1',
-  cognitoDomain: 'https://us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com',
+  userPoolId: CONFIG.COGNITO_USER_POOL_ID,
+  clientId: CONFIG.COGNITO_CLIENT_ID,
+  region: CONFIG.AWS_REGION,
+  cognitoDomain: `https://${CONFIG.COGNITO_DOMAIN}`,
   redirectUri: `${window.location.origin}`,
   logoutUri: `${window.location.origin}`
 };
@@ -47,6 +48,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   const isAuthenticated = !!user && !!token;
+
+  // Development mode: Set up mock authentication immediately
+  const initializeDevelopmentAuth = (): void => {
+    const mockUser: User = {
+      email: 'dev@templatebuilder365.com',
+      sub: 'dev-user-id',
+      name: 'Development User'
+    };
+    const mockToken = `dev.mock.token.${Date.now()}`;
+
+    setUser(mockUser);
+    setToken(mockToken);
+    setIsLoading(false);
+
+    console.log('🛠️ Development mode: Using mock authentication');
+  };
 
   // PKCE helper functions (same as our working test)
   const generateCodeVerifier = (): string => {
@@ -242,7 +259,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     console.log('🚀 TB365 AuthProvider initializing...');
+    console.log(`Environment: ${CONFIG.ENVIRONMENT}, Auth enabled: ${isAuthEnabled()}`);
 
+    // Development mode: bypass authentication entirely
+    if (!isAuthEnabled()) {
+      initializeDevelopmentAuth();
+      return;
+    }
+
+    // Production/Stage mode: real authentication
     // Check for OAuth callback
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('code') || urlParams.get('error')) {

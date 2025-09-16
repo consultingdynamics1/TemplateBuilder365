@@ -17,6 +17,7 @@ interface CanvasStore extends CanvasState {
   moveElement: (elementId: string, position: { x: number; y: number }) => void;
   resizeElement: (elementId: string, size: { width: number; height: number }) => void;
   clearSelection: () => void;
+  clearCanvas: () => void;
   enterEditMode: (elementId: string) => void;
   exitEditMode: () => void;
   enterTableCellEditMode: (elementId: string, row: number, col: number) => void;
@@ -124,7 +125,7 @@ export const useCanvasStore = create<CanvasStore>()(
     editingElementId: null,
     editingTableCell: null,
     activeTool: 'select',
-    canvasSize: { width: 800, height: 600 },
+    canvasSize: { width: 794, height: 1123 }, // A4 size at 96 DPI
     zoom: 1,
     snapToGrid: false,
     gridSize: 20,
@@ -256,6 +257,18 @@ export const useCanvasStore = create<CanvasStore>()(
         state.editingTableCell = null; // Also exit table cell edit mode
       }),
 
+    clearCanvas: () =>
+      set((state) => {
+        state.elements = [];
+        state.selectedElementId = null;
+        state.editingElementId = null;
+        state.editingTableCell = null;
+        state.activeTool = 'select';
+        // Reset to A4 default size
+        state.canvasSize = { width: 794, height: 1123 };
+        state.zoom = 1;
+      }),
+
     enterEditMode: (elementId) =>
       set((state) => {
         state.editingElementId = elementId;
@@ -303,7 +316,7 @@ export const useCanvasStore = create<CanvasStore>()(
         state.selectedElementId = canvasState.selectedElementId || null;
         state.editingElementId = canvasState.editingElementId || null;
         state.activeTool = canvasState.activeTool || 'select';
-        state.canvasSize = canvasState.canvasSize || { width: 800, height: 600 };
+        state.canvasSize = canvasState.canvasSize || { width: 794, height: 1123 }; // A4 size at 96 DPI
         state.zoom = canvasState.zoom || 1;
         state.snapToGrid = canvasState.snapToGrid || false;
         state.gridSize = canvasState.gridSize || 20;
