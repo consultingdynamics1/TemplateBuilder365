@@ -697,6 +697,38 @@ TemplateBuilder365/
   - `npm run dev` - Development with auth bypass
   - `npm run build:stage` - Stage deployment (ready for S3)
   - `npm run build:prod` - Production deployment (ready for S3)
+
+**🚀 STAGE DEPLOYMENT COMPLETED (2025-09-16)**:
+1. ✅ S3 bucket `tb365-frontend-stage` created and configured for static website hosting
+2. ✅ Stage build deployed to S3 with environment variables replaced
+3. ✅ S3 client utilities implemented (`src/utils/s3Client.ts`) with user isolation and versioning
+4. ✅ Conditional storage logic added - development uses local files, stage/prod uses S3
+5. ✅ Added AWS SDK dependencies (@aws-sdk/client-s3) to package.json
+6. ✅ Build pipeline working: `npm run build:stage` + `aws s3 sync`
+
+**🔐 COGNITO AUTHENTICATION ANALYSIS (2025-09-16)**:
+1. ✅ Analyzed test harness (`public/cognito-test.html`) from previous Cognito work
+2. ✅ Identified SPA authentication patterns and PKCE implementation requirements
+3. ✅ Found root cause of S3 browser authentication error: `crypto.subtle` unavailable in HTTP context
+4. ✅ Updated Cognito client `2addji24p0obg5sqedgise13i4` redirect URLs for stage domain
+5. ✅ Discovered S3 website endpoints don't support HTTPS (crypto.subtle requirement)
+
+**⚠️ CURRENT BLOCKER - HTTPS REQUIREMENT**:
+- **Issue**: S3 static website endpoints only support HTTP, but PKCE authentication requires HTTPS for `crypto.subtle` API
+- **Error**: `Cannot read properties of undefined (reading 'digest')` when attempting crypto operations
+- **Stage URL**: `http://tb365-frontend-stage.s3-website-us-east-1.amazonaws.com/` (HTTP only)
+- **Security Context**: crypto.subtle only available in HTTPS or localhost contexts
+
+**📋 NEXT STEPS - CloudFront HTTPS Setup**:
+1. **Existing Certificate**: Valid SSL certificate for `templatestudio365.com` + `www.templatestudio365.com` (expires Sept 2026)
+2. **Planned Setup**: Deploy TB365 to `stage.templatestudio365.com` using existing certificate
+3. **Migration Strategy**: Non-breaking approach - TB365 on subdomain initially, can flip to main domain later
+4. **CloudFront Distribution**: Create distribution pointing to `tb365-frontend-stage` S3 bucket
+5. **Cognito Update**: Update redirect URLs to `https://stage.templatestudio365.com`
+6. **Full HTTPS Flow**: Test complete Cognito PKCE → S3 operations → file save/load
+
+**🎯 IMMEDIATE PRIORITY**:
+Create CloudFront distribution for `stage.templatestudio365.com` to enable HTTPS and complete the authentication flow testing.
   - `npm run restore` - Restore template placeholders
 
 **✅ COMPLETED S3 Integration & Stage Deployment (2025-09-16)**:
