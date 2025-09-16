@@ -727,8 +727,75 @@ TemplateBuilder365/
 5. **Cognito Update**: Update redirect URLs to `https://stage.templatestudio365.com`
 6. **Full HTTPS Flow**: Test complete Cognito PKCE → S3 operations → file save/load
 
-**🎯 IMMEDIATE PRIORITY**:
-Create CloudFront distribution for `stage.templatestudio365.com` to enable HTTPS and complete the authentication flow testing.
+**🎉 HTTPS AUTHENTICATION COMPLETE (2025-09-16)**:
+1. ✅ CloudFront distribution created: `E1EAQCARE6J2EM` at `https://de1ztc46ci2dy.cloudfront.net/`
+2. ✅ HTTPS enabled with CloudFront default SSL certificate for secure crypto.subtle context
+3. ✅ Fixed OAuth scope: Added "profile" to "email openid profile" for Cognito compatibility
+4. ✅ Fixed redirect URI: Added trailing slash for exact Cognito URL matching
+5. ✅ Cognito client updated with CloudFront callback URLs
+6. ✅ Complete authentication flow working: Login → JWT tokens → authenticated user context
+
+**🔐 AUTHENTICATION SYSTEM WORKING**:
+- **Stage URL**: `https://de1ztc46ci2dy.cloudfront.net/` (HTTPS with crypto.subtle support)
+- **Cognito Flow**: PKCE OAuth 2.0 with scope "email openid profile"
+- **JWT Tokens**: Real user authentication with access tokens stored
+- **User Context**: Authenticated user data available for S3 operations
+- **Security Context**: HTTPS enables crypto.subtle for PKCE authentication
+
+**⚠️ CURRENT LIMITATION - S3 SECURITY ISSUE**:
+- **Problem**: Direct AWS SDK usage in browser is a security risk
+- **Current State**: Save function still uses local file downloads (desktop save dialog)
+- **Root Cause**: Browser cannot safely use AWS SDK with user credentials
+- **Evidence**: User reports save dialog opens to desktop instead of cloud storage
+
+**🎯 NEXT PHASE - SECURE S3 INTEGRATION**:
+**Option A: API Gateway + Lambda Proxy (RECOMMENDED)**
+- Route S3 operations through serverless Lambda functions
+- Use existing JWT authentication at API Gateway level
+- Leverage existing integration-api infrastructure
+- Secure: No AWS credentials exposed to browser
+
+**Option B: Cognito Identity Pool**
+- Create Identity Pool linked to existing User Pool
+- Federated credentials for temporary S3 access
+- More complex setup but follows AWS best practices
+
+**Option C: Presigned URLs**
+- Generate presigned S3 URLs via Lambda
+- Direct browser uploads using presigned URLs
+- Good performance with maintained security
+
+**💻 MULTI-COMPUTER DEVELOPMENT SETUP**:
+When adding additional development machines, AWS CLI credentials will be needed:
+
+**Option A: Locate Existing Credentials**
+- Check current machine: `~/.aws/credentials` or `~/.aws/config`
+- Copy same access key to new computer for consistency
+- Use `aws configure` to set up on new machine
+
+**Option B: Create New AWS Access Key (RECOMMENDED)**
+- AWS Console → IAM → Users → `templatestudio365` → Security credentials
+- Create new access key for CLI usage on new computer
+- Configure via `aws configure` with new credentials
+- Keep both keys active (one per machine) for better organization
+
+**Option C: AWS SSO/Named Profiles**
+- Set up named profiles for different machines
+- Each computer gets its own credential set and profile name
+- Better security and organization for multi-machine development
+
+**🔄 RECOVERY PROCEDURE FOR NEW MACHINES**:
+1. **Git Clone**: `git clone https://github.com/consultingdynamics1/TemplateBuilder365.git`
+2. **AWS Setup**: Configure AWS CLI with new or existing credentials
+3. **Dependencies**: `npm install` in both root and `integration-api/` folders
+4. **Read State**: Review `CLAUDE.md` for complete current status
+5. **Continue**: Pick up from documented next phase (secure S3 integration)
+
+**✅ RESOURCES ACCESSIBLE FROM ANY MACHINE**:
+- S3 buckets: `tb365-frontend-stage`, `templatebuilder365-user-data`
+- CloudFront distribution: `E1EAQCARE6J2EM` (`https://de1ztc46ci2dy.cloudfront.net/`)
+- Cognito user pool: `us-east-1_RIOPGg1Cq` with app client `2addji24p0obg5sqedgise13i4`
+- All AWS resources work from any computer with proper CLI credentials
   - `npm run restore` - Restore template placeholders
 
 **✅ COMPLETED S3 Integration & Stage Deployment (2025-09-16)**:
@@ -741,12 +808,19 @@ Create CloudFront distribution for `stage.templatestudio365.com` to enable HTTPS
 10. ✅ Deploy React app to stage S3 static website hosting
 11. ✅ Test environment switching: development → stage configurations
 
-**🚀 STAGE DEPLOYMENT LIVE**:
-- **Frontend URL**: http://tb365-frontend-stage.s3-website-us-east-1.amazonaws.com
-- **User Data Bucket**: `s3://templatebuilder365-user-data`
-- **Authentication**: Real Cognito JWT with existing user pool (`us-east-1_RIOPGg1Cq`)
-- **File Storage**: S3 cloud storage with user isolation
-- **Environment**: Fully functional stage environment ready for testing
+**🚀 STAGE DEPLOYMENT LIVE & WORKING**:
+- **Frontend URL**: `https://de1ztc46ci2dy.cloudfront.net/` (CloudFront HTTPS)
+- **S3 Origin**: `http://tb365-frontend-stage.s3-website-us-east-1.amazonaws.com` (HTTP backend)
+- **User Data Bucket**: `s3://templatebuilder365-user-data` (ready for secure integration)
+- **Authentication**: ✅ Working Cognito JWT with user pool (`us-east-1_RIOPGg1Cq`)
+- **Security Context**: ✅ HTTPS enables crypto.subtle for authentication
+- **User Experience**: ✅ Complete login/logout flow with real user data
+
+**📋 IMPLEMENTATION STATUS**:
+- ✅ **Development Environment**: Local auth bypass + file downloads working
+- ✅ **Stage Authentication**: HTTPS + Cognito OAuth + JWT tokens working
+- ⏳ **Stage File Storage**: Needs secure S3 integration (API Gateway + Lambda)
+- ⏳ **Production Deployment**: Ready for promotion after S3 integration complete
 
 **⚠️ Known Issue**: S3 client needs browser-compatible authentication
 - Current: Uses CLI credentials (works in terminal, not browser)

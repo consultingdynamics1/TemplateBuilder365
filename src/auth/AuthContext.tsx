@@ -7,8 +7,8 @@ const AUTH_CONFIG = {
   clientId: CONFIG.COGNITO_CLIENT_ID,
   region: CONFIG.AWS_REGION,
   cognitoDomain: `https://${CONFIG.COGNITO_DOMAIN}`,
-  redirectUri: `${window.location.origin}`,
-  logoutUri: `${window.location.origin}`
+  redirectUri: `${window.location.origin}/`,
+  logoutUri: `${window.location.origin}/`
 };
 
 interface User {
@@ -105,7 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const params = new URLSearchParams({
         client_id: AUTH_CONFIG.clientId,
         response_type: 'code',
-        scope: 'email openid',
+        scope: 'email openid profile',
         redirect_uri: AUTH_CONFIG.redirectUri,
         code_challenge: codeChallenge,
         code_challenge_method: 'S256'
