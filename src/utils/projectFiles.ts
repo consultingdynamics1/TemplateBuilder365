@@ -1,4 +1,29 @@
 import type { CanvasState } from '../types';
+import { CONFIG, isDevelopment } from '../config/environment';
+import { s3Client } from './s3Client';
+
+// Helper to get current user ID from auth context
+// In a real app, this would import useAuth hook
+function getCurrentUserId(): string {
+  // For development mode, use a mock user ID
+  if (isDevelopment()) {
+    return 'dev-user-id';
+  }
+
+  // For stage/production, we'll get this from localStorage for now
+  // TODO: Import useAuth hook when we integrate this properly
+  const userData = localStorage.getItem('tb365_user');
+  if (userData) {
+    try {
+      const user = JSON.parse(userData);
+      return user.sub || 'unknown-user';
+    } catch (error) {
+      console.error('Failed to parse user data:', error);
+    }
+  }
+
+  return 'unknown-user';
+}
 
 export interface ProjectFile {
   projectName: string;
@@ -36,9 +61,35 @@ export function createProjectFile(
 }
 
 /**
- * Save project file with "Save As" dialog
+ * Save project file with environment-aware storage
  */
 export async function saveProjectFile(
+  projectName: string,
+  canvasState: CanvasState
+): Promise<string> {
+  // Development: Use local "Save As" dialog
+  if (isDevelopment()) {
+    return await saveProjectFileLocal(projectName, canvasState);
+  }
+
+  // Stage/Production: Use S3 cloud storage
+  try {
+    const userId = getCurrentUserId();
+    console.log(`💾 Saving to S3: user=${userId}, project=${projectName}, env=${CONFIG.ENVIRONMENT}`);
+
+    await s3Client.saveProject(userId, projectName, canvasState);
+    return projectName;
+  } catch (error) {
+    console.error('❌ S3 save failed, falling back to local save:', error);
+    // Fallback to local save if S3 fails
+    return await saveProjectFileLocal(projectName, canvasState);
+  }
+}
+
+/**
+ * Local file save with "Save As" dialog (development mode)
+ */
+async function saveProjectFileLocal(
   projectName: string,
   canvasState: CanvasState
 ): Promise<string> {
