@@ -27,27 +27,23 @@ async function streamToString(stream) {
 }
 
 // Simple response helpers (no external dependencies)
-function successResponse(data) {
+function successResponse(data, corsHeaders = {}) {
   return {
     statusCode: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-      'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...corsHeaders
     },
     body: JSON.stringify(data)
   };
 }
 
-function errorResponse(statusCode, message, details = {}) {
+function errorResponse(statusCode, message, details = {}, corsHeaders = {}) {
   return {
     statusCode,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-      'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...corsHeaders
     },
     body: JSON.stringify({
       error: message,
@@ -87,6 +83,59 @@ function extractUserFromJWT(event) {
       reason: `JWT parsing error: ${error.message}`,
       message: 'Authentication token invalid'
     };
+  }
+}
+
+// Version cleanup function
+async function cleanupOldVersions(userId, projectName) {
+  const bucket = 'templatebuilder365-user-data';
+  const stage = process.env.STAGE || 'dev';
+  const versionRetention = parseInt(process.env.PROJECT_VERSION_RETENTION || '3');
+
+  try {
+    const prefix = `${stage}/${userId}/projects/${projectName}/`;
+
+    // List all objects for this project
+    const listResult = await s3Client.send(new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: prefix
+    }));
+
+    if (!listResult.Contents) {
+      return; // No versions to clean up
+    }
+
+    // Filter out current.json and get only version folders
+    const versionObjects = listResult.Contents
+      .filter(obj => obj.Key.includes('/v') && obj.Key.endsWith('/template.tb365'))
+      .map(obj => {
+        const versionMatch = obj.Key.match(/\/v(\d+)\//);
+        return {
+          key: obj.Key,
+          version: versionMatch ? parseInt(versionMatch[1]) : 0,
+          lastModified: obj.LastModified
+        };
+      })
+      .sort((a, b) => b.version - a.version); // Sort by version number, newest first
+
+    // Keep only the configured number of versions
+    const versionsToDelete = versionObjects.slice(versionRetention);
+
+    if (versionsToDelete.length > 0) {
+      const deleteObjects = versionsToDelete.map(obj => ({ Key: obj.key }));
+
+      await s3Client.send(new DeleteObjectsCommand({
+        Bucket: bucket,
+        Delete: {
+          Objects: deleteObjects
+        }
+      }));
+
+      console.log(`🧹 Cleaned up ${versionsToDelete.length} old versions for project ${projectName} (keeping ${versionRetention} versions)`);
+    }
+  } catch (error) {
+    console.warn(`Warning: Failed to clean up old versions for ${projectName}:`, error.message);
+    // Don't fail the save operation if cleanup fails
   }
 }
 
@@ -143,6 +192,11 @@ async function saveProjectToS3(userId, projectName, canvasState) {
   }));
 
   console.log(`✅ Saved project to S3: ${key}`);
+
+  // Clean up old versions (runs asynchronously, doesn't block response)
+  cleanupOldVersions(userId, projectName).catch(err =>
+    console.warn(`Warning: Version cleanup failed for ${projectName}:`, err.message)
+  );
 
   return {
     version,
@@ -280,6 +334,15 @@ exports.handler = async (event) => {
   try {
     console.log('🗂️ Project Manager (S3) - Full event:', JSON.stringify(event, null, 2));
 
+    // Always add CORS headers to every response
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-amz-date,x-amz-security-token',
+      'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS,PUT,PATCH',
+      'Access-Control-Max-Age': '86400',
+      'Access-Control-Allow-Credentials': 'false'
+    };
+
     // API Gateway V2 (HTTP API) uses different event structure
     const httpMethod = event.requestContext?.http?.method || event.httpMethod;
     const rawPath = event.rawPath || event.path;
@@ -293,14 +356,18 @@ exports.handler = async (event) => {
 
     // Health check (no auth required)
     if (httpMethod === 'GET' && path === '/api/projects/health') {
-      return successResponse({
-        service: 'TB365 Project Manager (Real S3)',
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        stage: process.env.STAGE || 'unknown',
-        version: 'sdk-v2-s3',
-        bucket: 'templatebuilder365-user-data'
-      });
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          service: 'TB365 Project Manager (Real S3)',
+          status: 'healthy',
+          timestamp: new Date().toISOString(),
+          stage: process.env.STAGE || 'unknown',
+          version: 'sdk-v2-s3',
+          bucket: 'templatebuilder365-user-data'
+        })
+      };
     }
 
     // All other endpoints require auth (but we'll mock it for testing)
@@ -333,10 +400,10 @@ exports.handler = async (event) => {
           savedAt: result.savedAt,
           userId,
           s3Key: result.s3Key
-        });
+        }, corsHeaders);
       } catch (error) {
         console.error('Save error:', error);
-        return errorResponse(500, 'Failed to save project to S3', { error: error.message });
+        return errorResponse(500, 'Failed to save project to S3', { error: error.message }, corsHeaders);
       }
     }
 
@@ -413,14 +480,10 @@ exports.handler = async (event) => {
     }
 
     if (httpMethod === 'OPTIONS') {
+      console.log('🔧 CORS preflight request received');
       return {
         statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-          'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
-          'Access-Control-Max-Age': '86400'
-        },
+        headers: corsHeaders,
         body: ''
       };
     }

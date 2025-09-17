@@ -1,90 +1,60 @@
 # TemplateBuilder365 - Project Guide
 
-## 📚 Documentation Structure
-
-This project documentation has been organized into focused sections for better navigation and performance:
-
-### 📋 Project Overview
-- **[docs/project/overview.md](docs/project/overview.md)** - Current status, tech stack, quick reference
-- **[docs/project/core-features.md](docs/project/core-features.md)** - Canvas, elements, tools, file format
-- **[docs/project/architecture.md](docs/project/architecture.md)** - State management, components, environment config
-
-### 🔧 Backend Systems
-- **[docs/backend/integration-api.md](docs/backend/integration-api.md)** - Complete serverless Lambda API system
-- **[docs/backend/authentication.md](docs/backend/authentication.md)** - AWS Cognito JWT implementation
-- **[docs/backend/cloud-storage.md](docs/backend/cloud-storage.md)** - S3 integration and deployment pipeline
-
-### 🚀 Development
-- **[docs/development/setup.md](docs/development/setup.md)** - Local development, scripts, testing
-- **[docs/development/deployment.md](docs/development/deployment.md)** - Environment strategy, build pipeline
-- **[docs/development/testing.md](docs/development/testing.md)** - Testing approaches and performance metrics
-
-### 🎯 Quick Navigation
-- **[docs/README.md](docs/README.md)** - Complete navigation guide with quick start links
-
----
-
-## 🎉 Current Status
-
-**TemplateBuilder365** is a React-based visual template builder providing a Figma-like design experience in the browser.
-
-### ✅ **STAGE DEPLOYMENT LIVE & WORKING**
-- **Frontend URL**: `https://de1ztc46ci2dy.cloudfront.net/` (CloudFront HTTPS)
-- **Authentication**: Working Cognito JWT with user pool (`us-east-1_RIOPGg1Cq`)
-- **User Experience**: Complete login/logout flow with real user data
-
-### 📋 **IMPLEMENTATION STATUS**
-- ✅ **Development Environment**: Local auth bypass + file downloads working
-- ✅ **Stage Authentication**: HTTPS + Cognito OAuth + JWT tokens working
-- ⏳ **Stage File Storage**: Needs secure S3 integration (API Gateway + Lambda)
-- ⏳ **Production Deployment**: Ready for promotion after S3 integration complete
-
 ## 🚀 Quick Start
+TemplateBuilder365 is a React-based visual template builder with cloud storage, authentication, and versioning. Built with TypeScript, Konva.js, and AWS serverless architecture.
 
-### Development
+## 📚 Documentation
+- **[Project Overview](docs/project/overview.md)** - What is TemplateBuilder365 and core concepts
+- **[Core Features](docs/project/core-features.md)** - Element types, canvas features, editing capabilities
+- **[Architecture](docs/project/architecture.md)** - Tech stack, component structure, state management
+
+## 🛠️ Development
+- **[Setup Guide](docs/development/setup.md)** - Environment setup, dependencies, configuration
+- **[Deployment](docs/development/deployment.md)** - Build pipeline, environment management, AWS deployment
+- **[Testing](docs/development/testing.md)** - Test strategies, debugging, performance monitoring
+
+## ⚙️ Backend & Infrastructure
+- **[Integration API](docs/backend/integration-api.md)** - Lambda functions, serverless architecture, endpoints
+- **[Authentication](docs/backend/authentication.md)** - AWS Cognito, JWT tokens, security model
+- **[Cloud Storage](docs/backend/cloud-storage.md)** - S3 integration, versioning, file management
+
+## 📈 Current Status
+- ✅ **S3 Cloud Storage**: User projects stored with versioning and cleanup
+- ✅ **Authentication**: AWS Cognito JWT with development bypass
+- ✅ **Load/Save Cycle**: Complete cloud storage integration with version retention
+- ✅ **Configuration System**: Environment-aware variable replacement
+- ✅ **Deployment Pipeline**: Stage deployment active at CloudFront HTTPS
+
+## 🔧 Development Environment
 ```bash
-git clone https://github.com/consultingdynamics1/TemplateBuilder365.git
-cd TemplateBuilder365
-npm install
-npm run dev  # Start on localhost:5174
+npm run dev              # Start development server (localhost:5174)
+npm run build:stage      # Build for staging deployment
+npm run build:prod       # Build for production deployment
 ```
 
-### Environment-Specific Builds
-```bash
-npm run build:stage    # Build for stage deployment
-npm run build:prod     # Build for production deployment
-npm run deploy:stage   # Deploy to S3 stage bucket
-npm run deploy:prod    # Deploy to S3 production bucket
+## 📋 Environment Configuration
+- **Development**: Auth bypass, cloud storage via deployed Lambda
+- **Stage**: Real Cognito auth, CloudFront HTTPS, S3 storage
+- **Production**: Full auth + security, production endpoints
+
+## 🗂️ Project Structure
+```
+TemplateBuilder365/
+├── src/                 # React frontend application
+├── integration-api/     # AWS Lambda serverless functions
+├── scripts/            # Build and deployment scripts
+├── docs/               # Organized project documentation
+└── CLAUDE-ARCHIVE.md   # Complete implementation history
 ```
 
-## 🎯 Next Phase: Secure S3 Integration
+## 🔗 Key Resources
+- **Frontend**: http://localhost:5174 (development)
+- **Stage**: https://de1ztc46ci2dy.cloudfront.net/ (staging)
+- **API**: https://jczxdnaz4m.execute-api.us-east-1.amazonaws.com/stage
+- **S3 Bucket**: templatebuilder365-user-data
 
-### Current Limitation
-- **Problem**: Direct AWS SDK usage in browser is a security risk
-- **Current State**: Save function uses local file downloads
-- **Solution Needed**: API Gateway + Lambda proxy for S3 operations
-
-### Recommended Implementation
-**Option A: API Gateway + Lambda Proxy**
-- Route S3 operations through serverless Lambda functions
-- Use existing JWT authentication at API Gateway level
-- Leverage existing integration-api infrastructure
-- Secure: No AWS credentials exposed to browser
-
-## 💾 Recovery for New Machines
-
-1. **Git Clone**: Repository contains complete project state
-2. **AWS Setup**: Configure AWS CLI credentials for deployment
-3. **Dependencies**: `npm install` in both root and `integration-api/` folders
-4. **Documentation**: Read [docs/README.md](docs/README.md) for current status
-5. **Continue Development**: Pick up from documented next phase
-
-**✅ All AWS resources accessible from any machine with proper CLI credentials**
+## 📖 Implementation History
+For complete implementation details, technical decisions, and step-by-step development history, see [CLAUDE-ARCHIVE.md](CLAUDE-ARCHIVE.md).
 
 ---
-
-## 📖 Legacy Reference
-
-This main CLAUDE.md file previously contained all documentation (~1,300 lines). The content has been reorganized into focused documentation files for better performance and maintainability while preserving all implementation details and current status.
-
-For the complete documentation, please visit [docs/README.md](docs/README.md).
+*This guide provides focused navigation to project documentation. All detailed implementation history and technical specifications are preserved in the archive.*

@@ -1,10 +1,11 @@
 {
   "ENVIRONMENT": "development",
   "ENABLE_AUTH": "false",
-  "S3_BUCKET": "local-filesystem",
+  "S3_BUCKET": "templatebuilder365-user-data",
   "AWS_REGION": "us-east-1",
-  "API_ENDPOINT": "http://localhost:3000",
+  "API_ENDPOINT": "https://jczxdnaz4m.execute-api.us-east-1.amazonaws.com/stage",
   "COGNITO_USER_POOL_ID": "mock-user-pool",
   "COGNITO_CLIENT_ID": "mock-client-id",
-  "COGNITO_DOMAIN": "mock.auth.us-east-1.amazoncognito.com"
+  "COGNITO_DOMAIN": "mock.auth.us-east-1.amazoncognito.com",
+  "PROJECT_VERSION_RETENTION": "3"
 }

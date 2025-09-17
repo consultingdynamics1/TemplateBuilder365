@@ -2,7 +2,7 @@ import React from 'react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useAuth } from '../../auth';
 import type { ToolType } from '../../types/index';
-import { saveProjectFile, loadProjectFromFile, getExistingProjectNames } from '../../utils/projectFiles';
+import { saveProjectFile, loadProjectFromFile, getExistingProjectNames, loadProjectFromStorage, getCloudProjectNames } from '../../utils/projectFiles';
 import { SaveDialog } from '../SaveDialog/SaveDialog';
 import './Toolbar.css';
 
@@ -78,13 +78,16 @@ export const Toolbar: React.FC = () => {
     // Get complete canvas state for saving
     elements,
     canvasSize,
-    editingElementId
+    editingElementId,
+    storageMode,
+    setStorageMode
   } = useCanvasStore();
 
   const [saveStatus, setSaveStatus] = React.useState<string>('');
   const [isSaving, setIsSaving] = React.useState(false);
   const [loadStatus, setLoadStatus] = React.useState<string>('');
   const [showSaveDialog, setShowSaveDialog] = React.useState(false);
+  const [showLoadDialog, setShowLoadDialog] = React.useState(false);
   const [currentDocumentName, setCurrentDocumentName] = React.useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -95,7 +98,7 @@ export const Toolbar: React.FC = () => {
       const defaultName = firstTextElement?.content || 'Untitled Template';
       setCurrentDocumentName(defaultName);
     }
-    
+
     setShowSaveDialog(true);
   };
 
@@ -114,10 +117,11 @@ export const Toolbar: React.FC = () => {
         canvasSize,
         zoom,
         snapToGrid,
-        gridSize: 20 // Default grid size
+        gridSize: 20, // Default grid size
+        storageMode
       };
 
-      const savedFilename = await saveProjectFile(filename, canvasState);
+      const savedFilename = await saveProjectFile(filename, canvasState, storageMode);
       setCurrentDocumentName(filename);
       setSaveStatus(`Saved: ${savedFilename}`);
       
@@ -133,7 +137,29 @@ export const Toolbar: React.FC = () => {
   };
 
   const handleLoadProject = () => {
-    fileInputRef.current?.click();
+    if (storageMode === 'cloud') {
+      setShowLoadDialog(true);
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleLoadFromCloud = async (projectName: string) => {
+    setLoadStatus('Loading from cloud...');
+    setShowLoadDialog(false);
+
+    try {
+      const projectData = await loadProjectFromStorage(projectName, 'cloud');
+      loadCanvasState(projectData.canvasState);
+      setCurrentDocumentName(projectData.projectName);
+      setLoadStatus(`Loaded: ${projectData.projectName}`);
+
+      setTimeout(() => setLoadStatus(''), 3000);
+    } catch (error) {
+      setLoadStatus('Cloud load failed');
+      setTimeout(() => setLoadStatus(''), 3000);
+      console.error('Cloud load error:', error);
+    }
   };
 
   const handleNewProject = () => {
@@ -273,8 +299,8 @@ export const Toolbar: React.FC = () => {
             style={{ display: 'none' }}
           />
           {(saveStatus || loadStatus) && (
-            <span style={{ 
-              fontSize: '0.75rem', 
+            <span style={{
+              fontSize: '0.75rem',
               color: (saveStatus || loadStatus).includes('failed') ? '#f44336' : '#4caf50',
               marginLeft: '8px',
               whiteSpace: 'nowrap'
@@ -282,6 +308,23 @@ export const Toolbar: React.FC = () => {
               {saveStatus || loadStatus}
             </span>
           )}
+        </div>
+
+        {/* Storage Mode Toggle - right after save/load operations */}
+        <div className="tool-group storage-mode">
+          <button
+            className={`storage-toggle-button ${storageMode === 'cloud' ? 'cloud-mode' : 'local-mode'}`}
+            onClick={() => setStorageMode(storageMode === 'cloud' ? 'local' : 'cloud')}
+            title={storageMode === 'cloud' ? 'Switch to Local Storage' : 'Switch to Cloud Storage'}
+            type="button"
+          >
+            <span className="storage-icon">
+              {storageMode === 'cloud' ? '⬆️' : '⬇️'}
+            </span>
+          </button>
+          <span className="storage-label">
+            {storageMode === 'cloud' ? 'Cloud Storage' : 'Local Files'}
+          </span>
         </div>
       </div>
 
@@ -380,6 +423,7 @@ export const Toolbar: React.FC = () => {
         </div>
       </div>
 
+
       {/* User Section */}
       <div className="toolbar-section user-section">
         <UserInfo />
@@ -392,6 +436,114 @@ export const Toolbar: React.FC = () => {
         onSave={handleSaveConfirm}
         onCancel={() => setShowSaveDialog(false)}
       />
+
+      {/* Load Dialog for Cloud Storage */}
+      {showLoadDialog && (
+        <LoadDialog
+          isOpen={showLoadDialog}
+          storageMode={storageMode}
+          onLoad={handleLoadFromCloud}
+          onCancel={() => setShowLoadDialog(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+// Simple LoadDialog component
+interface LoadDialogProps {
+  isOpen: boolean;
+  storageMode: 'local' | 'cloud';
+  onLoad: (projectName: string) => void;
+  onCancel: () => void;
+}
+
+const LoadDialog: React.FC<LoadDialogProps> = ({
+  isOpen,
+  storageMode,
+  onLoad,
+  onCancel
+}) => {
+  const [projects, setProjects] = React.useState<string[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [selectedProject, setSelectedProject] = React.useState<string>('');
+
+  React.useEffect(() => {
+    if (isOpen && storageMode === 'cloud') {
+      setLoading(true);
+      getCloudProjectNames()
+        .then(projectNames => {
+          setProjects(projectNames);
+          if (projectNames.length > 0) {
+            setSelectedProject(projectNames[0]);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to load project list:', error);
+          setProjects([]);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [isOpen, storageMode]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onCancel();
+    } else if (e.key === 'Enter' && selectedProject) {
+      onLoad(selectedProject);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="save-dialog-overlay" onClick={onCancel}>
+      <div className="save-dialog" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
+        <div className="save-dialog-header">
+          <h2>Load Project</h2>
+          <button className="close-button" onClick={onCancel}>×</button>
+        </div>
+
+        <div className="save-dialog-content">
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              Loading projects...
+            </div>
+          ) : projects.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              No projects found in cloud storage.
+            </div>
+          ) : (
+            <div className="existing-files">
+              <h4>Available Projects:</h4>
+              <div className="file-list">
+                {projects.map((project) => (
+                  <div
+                    key={project}
+                    className={`file-item ${project === selectedProject ? 'current' : ''}`}
+                    onClick={() => setSelectedProject(project)}
+                  >
+                    {project}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="save-dialog-footer">
+          <button className="btn-secondary" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            className="btn-primary"
+            onClick={() => selectedProject && onLoad(selectedProject)}
+            disabled={!selectedProject || loading}
+          >
+            Load
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

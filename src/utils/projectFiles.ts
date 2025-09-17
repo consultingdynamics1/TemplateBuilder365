@@ -1,10 +1,16 @@
-import type { CanvasState } from '../types';
+import type { CanvasState, StorageMode } from '../types';
 import { CONFIG, isDevelopment } from '../config/environment';
-import { s3Client } from './s3Client';
+// import { s3Client } from './s3Client';
+import {
+  saveProjectToAPI,
+  loadProjectFromAPI,
+  listProjectsFromAPI,
+  deleteProjectFromAPI
+} from './apiClient';
 
 // Helper to get current user ID from auth context
 // In a real app, this would import useAuth hook
-function getCurrentUserId(): string {
+function _getCurrentUserId(): string {
   // For development mode, use a mock user ID
   if (isDevelopment()) {
     return 'dev-user-id';
@@ -61,27 +67,34 @@ export function createProjectFile(
 }
 
 /**
- * Save project file with environment-aware storage
+ * Save project file with storage mode-aware routing
  */
 export async function saveProjectFile(
   projectName: string,
-  canvasState: CanvasState
+  canvasState: CanvasState,
+  storageMode?: StorageMode
 ): Promise<string> {
-  // Development: Use local "Save As" dialog
-  if (isDevelopment()) {
+  // Use storage mode from parameter or fall back to environment-based logic
+  // If API_ENDPOINT points to AWS, use cloud storage even in development
+  const useCloudStorage = storageMode === 'cloud' ||
+    (!storageMode && (CONFIG.API_ENDPOINT.includes('amazonaws.com') || !isDevelopment()));
+
+  // Local storage mode: Use "Save As" dialog
+  if (!useCloudStorage) {
+    console.log(`💾 Saving locally: project=${projectName}, mode=${storageMode || 'auto-local'}`);
     return await saveProjectFileLocal(projectName, canvasState);
   }
 
-  // Stage/Production: Use S3 cloud storage
+  // Cloud storage mode: Use Lambda API endpoints
   try {
-    const userId = getCurrentUserId();
-    console.log(`💾 Saving to S3: user=${userId}, project=${projectName}, env=${CONFIG.ENVIRONMENT}`);
+    console.log(`☁️ Saving to cloud via API: project=${projectName}, env=${CONFIG.ENVIRONMENT}`);
 
-    await s3Client.saveProject(userId, projectName, canvasState);
+    const result = await saveProjectToAPI(projectName, canvasState);
+    console.log(`✅ Cloud save successful: ${result.message} (version ${result.version})`);
     return projectName;
   } catch (error) {
-    console.error('❌ S3 save failed, falling back to local save:', error);
-    // Fallback to local save if S3 fails
+    console.error('❌ Cloud save failed, falling back to local save:', error);
+    // Fallback to local save if cloud fails
     return await saveProjectFileLocal(projectName, canvasState);
   }
 }
@@ -199,14 +212,12 @@ export async function loadProjectFile(filename: string): Promise<ProjectFile> {
 }
 
 /**
- * Get list of existing project names from localStorage
- * This is a temporary implementation - in production would query server/database
+ * Get list of existing project names from localStorage or cloud storage
  */
 export function getExistingProjectNames(): string[] {
   const savedProjects: string[] = [];
-  
-  // In a real app, this would query the file system or database
-  // For now, we'll simulate with localStorage keys
+
+  // For local storage mode, get from localStorage
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key?.startsWith('templatebuilder_project_')) {
@@ -214,6 +225,124 @@ export function getExistingProjectNames(): string[] {
       savedProjects.push(projectName);
     }
   }
-  
+
   return savedProjects.sort();
+}
+
+/**
+ * Get list of existing cloud project names
+ */
+export async function getCloudProjectNames(): Promise<string[]> {
+  try {
+    console.log('☁️ Loading project list from cloud via API');
+
+    const result = await listProjectsFromAPI();
+    const projectNames = result.projects.map(p => p.name);
+
+    console.log(`✅ Found ${projectNames.length} cloud projects`);
+    return projectNames.sort();
+  } catch (error) {
+    console.error('❌ Cloud project list failed:', error);
+    return [];
+  }
+}
+
+/**
+ * Load project from cloud storage or local storage based on storage mode
+ */
+export async function loadProjectFromStorage(
+  projectName: string,
+  storageMode: StorageMode
+): Promise<ProjectFile> {
+  if (storageMode === 'cloud') {
+    return await loadProjectFromCloud(projectName);
+  } else {
+    return await loadProjectFromLocal(projectName);
+  }
+}
+
+/**
+ * Load project from cloud storage via Lambda API
+ */
+async function loadProjectFromCloud(projectName: string): Promise<ProjectFile> {
+  try {
+    console.log(`☁️ Loading from cloud via API: project=${projectName}`);
+
+    const result = await loadProjectFromAPI(projectName);
+
+    // Transform API response to ProjectFile format
+    const projectFile: ProjectFile = {
+      projectName: result.projectName,
+      savedAt: result.savedAt,
+      version: result.version,
+      canvasState: result.canvasState
+    };
+
+    console.log(`✅ Cloud load successful: ${projectFile.projectName} (version ${projectFile.version})`);
+    return projectFile;
+  } catch (error) {
+    console.error('❌ Cloud load failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Load project from local storage (placeholder for future implementation)
+ */
+async function loadProjectFromLocal(projectName: string): Promise<ProjectFile> {
+  try {
+    console.log(`💾 Loading from localStorage: project=${projectName}`);
+
+    const storedData = localStorage.getItem(`templatebuilder_project_${projectName}`);
+    if (!storedData) {
+      throw new Error('Project not found in local storage');
+    }
+
+    return JSON.parse(storedData) as ProjectFile;
+  } catch (error) {
+    console.error('❌ Local load failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete project from storage based on storage mode
+ */
+export async function deleteProject(
+  projectName: string,
+  storageMode: StorageMode
+): Promise<void> {
+  if (storageMode === 'cloud') {
+    await deleteProjectFromCloud(projectName);
+  } else {
+    await deleteProjectFromLocal(projectName);
+  }
+}
+
+/**
+ * Delete project from cloud storage via Lambda API
+ */
+async function deleteProjectFromCloud(projectName: string): Promise<void> {
+  try {
+    console.log(`☁️ Deleting from cloud via API: project=${projectName}`);
+
+    const result = await deleteProjectFromAPI(projectName);
+    console.log(`✅ Cloud delete successful: ${result.message}`);
+  } catch (error) {
+    console.error('❌ Cloud delete failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete project from local storage
+ */
+async function deleteProjectFromLocal(projectName: string): Promise<void> {
+  try {
+    console.log(`💾 Deleting from localStorage: project=${projectName}`);
+    localStorage.removeItem(`templatebuilder_project_${projectName}`);
+  } catch (error) {
+    console.error('❌ Local delete failed:', error);
+    throw error;
+  }
 }

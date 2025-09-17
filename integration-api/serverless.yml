@@ -19,6 +19,7 @@ provider:
     LOCAL_OUTPUT_DIR: ${env:LOCAL_OUTPUT_DIR, '/tmp/test-output'}
     COGNITO_USER_POOL_ID: us-east-1_RIOPGg1Cq
     COGNITO_CLIENT_ID: 2addji24p0obg5sqedgise13i4
+    PROJECT_VERSION_RETENTION: ${env:PROJECT_VERSION_RETENTION, '3'}
   httpApi:
     authorizers:
       cognitoAuthorizer:
@@ -33,17 +34,19 @@ provider:
         - s3:GetObject
         - s3:PutObject
         - s3:DeleteObject
-      Resource: 
+      Resource:
         - "arn:aws:s3:::tb365-designs-${self:provider.stage}/*"
         - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}/*"
         - "arn:aws:s3:::TemplateBuilder365-${self:provider.stage}/*"
+        - "arn:aws:s3:::templatebuilder365-user-data/*"
     - Effect: Allow
       Action:
         - s3:ListBucket
-      Resource: 
+      Resource:
         - "arn:aws:s3:::tb365-designs-${self:provider.stage}"
         - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}"
         - "arn:aws:s3:::TemplateBuilder365-${self:provider.stage}"
+        - "arn:aws:s3:::templatebuilder365-user-data"
 
 functions:
   convertTb365ToApiTemplate:
@@ -107,12 +110,82 @@ functions:
             allowMethods:
               - POST
               - OPTIONS
-  
+
+  # Project Management Function
+  projectManager:
+    handler: functions/project-manager.handler
+    timeout: 30
+    memorySize: 512
+    events:
+      - httpApi:
+          path: /api/projects/save
+          method: post
+          authorizer:
+            name: cognitoAuthorizer
+          cors:
+            allowOrigin: '*'
+            allowHeaders:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+            allowMethods:
+              - POST
+              - OPTIONS
+      - httpApi:
+          path: /api/projects/list
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+          cors:
+            allowOrigin: '*'
+            allowHeaders:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+            allowMethods:
+              - GET
+              - OPTIONS
+      - httpApi:
+          path: /api/projects/load/{name}
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+          cors:
+            allowOrigin: '*'
+            allowHeaders:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+            allowMethods:
+              - GET
+              - OPTIONS
+      - httpApi:
+          path: /api/projects/{name}
+          method: delete
+          authorizer:
+            name: cognitoAuthorizer
+          cors:
+            allowOrigin: '*'
+            allowHeaders:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+            allowMethods:
+              - DELETE
+              - OPTIONS
+
   healthCheck:
     handler: functions/tb365-converter.health
     events:
       - httpApi:
           path: /health
+          method: get
+
+  projectHealthCheck:
+    handler: functions/project-manager.health
+    events:
+      - httpApi:
+          path: /api/projects/health
           method: get
 
 resources:
