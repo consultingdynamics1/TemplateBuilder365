@@ -1,0 +1,117 @@
+service: tb365-converter-standalone
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  deploymentBucket:
+    name: templatebuilder365-user-data
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    TB365_BUCKET: tb365-designs-${self:provider.stage}
+    API_TEMPLATE_BUCKET: apitemplate-exports-${self:provider.stage}
+    DEV_BUCKET: templatebuilder365-${self:provider.stage}
+    NODE_ENV: ${self:provider.stage}
+    OUTPUT_MODE: ${env:OUTPUT_MODE, 'response-only'}
+    LOCAL_OUTPUT_DIR: ${env:LOCAL_OUTPUT_DIR, '/tmp/test-output'}
+    COGNITO_USER_POOL_ID: us-east-1_RIOPGg1Cq
+    COGNITO_CLIENT_ID: 2addji24p0obg5sqedgise13i4
+    PROJECT_VERSION_RETENTION: ${env:PROJECT_VERSION_RETENTION, '3'}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      maxAge: 300
+    authorizers:
+      cognitoAuthorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_RIOPGg1Cq
+        audience:
+          - 2addji24p0obg5sqedgise13i4
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:DeleteObject
+      Resource:
+        - "arn:aws:s3:::tb365-designs-${self:provider.stage}/*"
+        - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}/*"
+        - "arn:aws:s3:::templatebuilder365-${self:provider.stage}/*"
+        - "arn:aws:s3:::templatebuilder365-user-data/*"
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+      Resource:
+        - "arn:aws:s3:::tb365-designs-${self:provider.stage}"
+        - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}"
+        - "arn:aws:s3:::templatebuilder365-${self:provider.stage}"
+        - "arn:aws:s3:::templatebuilder365-user-data"
+
+functions:
+  convertTb365ToApiTemplate:
+    handler: functions/tb365-converter.handler
+    timeout: 29
+    memorySize: 512
+    events:
+      - httpApi:
+          path: /convert
+          method: post
+          authorizer:
+            name: cognitoAuthorizer
+      - httpApi:
+          path: /convert/{id}
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+      - httpApi:
+          path: /output-config
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+      - httpApi:
+          path: /output-config
+          method: post
+          authorizer:
+            name: cognitoAuthorizer
+
+  healthCheck:
+    handler: functions/tb365-converter.health
+    events:
+      - httpApi:
+          path: /health
+          method: get
+
+plugins:
+  - serverless-offline
+
+package:
+  excludeDevDependencies: true
+  patterns:
+    - '!test*'
+    - '!*.test.js'
+    - '!project-manager*'
+    - '!node_modules/serverless*/**'
+    - '!node_modules/webpack*/**'
+    - '!node_modules/@hapi/**'
+    - '!node_modules/jest*/**'
+
+custom:
+  serverless-offline:
+    httpPort: 3002
+    host: 0.0.0.0
