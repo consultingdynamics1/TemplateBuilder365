@@ -25,3 +25,44 @@ dist-ssr
 
 # Template Builder project files (optional - keep for testing)
 # output/projects/*.tb365
+
+# Deployment artifacts and build files
+*.zip
+*.tar.gz
+
+# Serverless deployment artifacts
+.serverless/
+*/.serverless/
+
+# AWS Lambda deployment packages
+integration-api/*.zip
+integration-api/lambda-*.zip
+integration-api/tb365-*.zip
+integration-api/layer.zip
+integration-api/simple-lambda.zip
+integration-api/project-manager-*.zip
+
+# Deployment folders
+integration-api/deploy/
+integration-api/deploy-*/
+integration-api/minimal-converter/.serverless/
+
+# Test and conversion output files
+*-conversion*.json
+*-output.html
+*-template*.json
+test-export.json
+test-output.html
+latest-conversion.json
+improved-*.json
+improved-*.html
+real-*.json
+
+# Temporary build files
+integration-api/create-zip.js
+integration-api/webpack.config.js
+integration-api/test-*.js
+integration-api/credentials
+
+# Legacy template system artifacts
+scripts/templates/
