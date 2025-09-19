@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useAuth } from '../../auth';
-import { CONFIG } from '../../config/environment';
+import { CONFIG, isDevelopment } from '../../config/environment';
 import type { ToolType } from '../../types/index';
 import { saveProjectFile, loadProjectFromFile, getExistingProjectNames, loadProjectFromStorage, getCloudProjectNames } from '../../utils/projectFiles';
 import { SaveDialog } from '../SaveDialog/SaveDialog';
@@ -220,7 +220,7 @@ export const Toolbar: React.FC = () => {
       };
 
       // Call our conversion API (for development, we'll use the local mock server)
-      const converterEndpoint = CONFIG.ENVIRONMENT === 'development'
+      const converterEndpoint = isDevelopment()
         ? 'http://localhost:3001/convert'
         : `${CONFIG.API_ENDPOINT}/convert`;
 
@@ -230,7 +230,7 @@ export const Toolbar: React.FC = () => {
       };
 
       // Only add authorization header if we have a real token (not development)
-      if (CONFIG.ENVIRONMENT !== 'development' && user?.accessToken) {
+      if (!isDevelopment() && user?.accessToken) {
         headers['Authorization'] = `Bearer ${user.accessToken}`;
       }
 

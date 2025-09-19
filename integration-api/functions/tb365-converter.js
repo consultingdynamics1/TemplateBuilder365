@@ -21,12 +21,8 @@ exports.handler = async (event) => {
     // Extract request data
     const { httpMethod, pathParameters, body, headers = {} } = event;
     
-    // API Key Authentication
-    const authResult = authenticateRequest(headers);
-    if (!authResult.success) {
-      console.warn('Authentication failed:', authResult.reason);
-      return unauthorizedResponse(authResult.message);
-    }
+    // JWT Authentication (handled by API Gateway Cognito Authorizer)
+    // User info is available in event.requestContext.authorizer.jwt
     
     // Route handling
     if (httpMethod === 'POST' && event.path === '/convert') {
@@ -51,49 +47,7 @@ exports.handler = async (event) => {
   }
 };
 
-/**
- * Authenticate API request using x-api-key header
- * @param {Object} headers - Request headers
- * @returns {Object} Authentication result
- */
-function authenticateRequest(headers) {
-  const apiKey = process.env.API_KEY;
-  
-  // Skip authentication in development if no API key is set
-  if (!apiKey && process.env.NODE_ENV === 'development') {
-    console.warn('No API key configured - skipping authentication in development');
-    return { success: true };
-  }
-  
-  if (!apiKey) {
-    return {
-      success: false,
-      reason: 'No API key configured',
-      message: 'API authentication not configured'
-    };
-  }
-  
-  // Check for API key in headers (case-insensitive)
-  const providedKey = headers['x-api-key'] || headers['X-API-Key'] || headers['X-Api-Key'];
-  
-  if (!providedKey) {
-    return {
-      success: false,
-      reason: 'Missing API key header',
-      message: 'Missing x-api-key header'
-    };
-  }
-  
-  if (providedKey !== apiKey) {
-    return {
-      success: false,
-      reason: 'Invalid API key',
-      message: 'Invalid API key'
-    };
-  }
-  
-  return { success: true };
-}
+// Authentication is handled by API Gateway Cognito Authorizer
 
 /**
  * Handle OPTIONS request for CORS preflight

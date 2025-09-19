@@ -30,7 +30,6 @@
     "@aws-sdk/s3-request-presigner": "^3.658.1",
     "aws-lambda": "^1.0.7",
     "joi": "^17.13.3",
-    "puppeteer": "^24.20.0",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

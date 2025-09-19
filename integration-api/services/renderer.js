@@ -3,7 +3,17 @@
  * Stage 1: Local Development Version for PDF and PNG generation
  */
 
-const puppeteer = require('puppeteer');
+// Use chrome-aws-lambda for Lambda environment, puppeteer for local
+let puppeteer;
+let chromium;
+
+try {
+  chromium = require('chrome-aws-lambda');
+  puppeteer = chromium.puppeteer;
+} catch (error) {
+  // Fallback to regular puppeteer for local development
+  puppeteer = require('puppeteer');
+}
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -26,8 +36,9 @@ class LocalRenderer {
       console.log('Launching Puppeteer browser...');
       
       const launchOptions = {
-        headless: true,
-        args: [
+        headless: chromium ? chromium.headless : true,
+        executablePath: chromium ? await chromium.executablePath : undefined,
+        args: chromium ? chromium.args : [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
@@ -37,6 +48,7 @@ class LocalRenderer {
           '--single-process',
           '--disable-gpu'
         ],
+        defaultViewport: chromium ? chromium.defaultViewport : { width: 1280, height: 720 },
         ...options
       };
 

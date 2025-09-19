@@ -7,7 +7,7 @@
     "dev": "npm run build:dev && vite",
     "build": "tsc -b && vite build",
     "build:dev": "node scripts/replace-variables.js development",
-    "build:stage": "npm run restore && node scripts/replace-variables.js stage && npm run build",
+    "build:stage": "npm run restore && node scripts/replace-variables.js stage && vite build",
     "build:prod": "npm run restore && node scripts/replace-variables.js production && npm run build",
     "restore": "node scripts/restore-templates.js",
     "lint": "eslint .",

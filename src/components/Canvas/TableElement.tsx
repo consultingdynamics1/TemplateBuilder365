@@ -1,5 +1,5 @@
 import React from 'react';
-import { Group, Rect, Text, Line } from 'react-konva';
+import { Group, Rect, Text } from 'react-konva';
 import type { TableElement } from '../../types';
 
 interface TableElementProps {
@@ -14,7 +14,7 @@ export const TableElementComponent: React.FC<TableElementProps> = ({ element, is
   const cellHeight = size.height / rows;
 
   const renderTableCells = () => {
-    const components: JSX.Element[] = [];
+    const components: React.ReactElement[] = [];
 
     // Render cell backgrounds and text
     for (let row = 0; row < rows; row++) {

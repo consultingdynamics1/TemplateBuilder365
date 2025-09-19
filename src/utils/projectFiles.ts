@@ -10,6 +10,8 @@ import {
 
 // Helper to get current user ID from auth context
 // In a real app, this would import useAuth hook
+// Currently unused but planned for future S3 integration
+/*
 function _getCurrentUserId(): string {
   // For development mode, use a mock user ID
   if (isDevelopment()) {
@@ -30,6 +32,7 @@ function _getCurrentUserId(): string {
 
   return 'unknown-user';
 }
+*/
 
 export interface ProjectFile {
   projectName: string;

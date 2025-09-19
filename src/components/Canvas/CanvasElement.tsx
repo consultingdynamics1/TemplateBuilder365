@@ -15,7 +15,7 @@ export const CanvasElement: React.FC<CanvasElementProps> = ({
   isSelected,
   transformerRef,
 }) => {
-  const { selectElement, moveElement, resizeElement, enterEditMode, enterTableCellEditMode, editingElementId } = useCanvasStore();
+  const { selectElement, moveElement, resizeElement, enterEditMode, enterTableCellEditMode } = useCanvasStore();
   const shapeRef = React.useRef<any>(null);
   const [loadedImage, setLoadedImage] = React.useState<HTMLImageElement | null>(null);
 

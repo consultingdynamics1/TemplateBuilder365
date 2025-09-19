@@ -16,6 +16,7 @@ interface User {
   email: string;
   sub: string;
   name?: string;
+  accessToken?: string;
 }
 
 interface AuthContextType {
@@ -54,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const initializeDevelopmentAuth = (): void => {
     const mockUser: User = {
       email: 'dev@templatebuilder365.com',
-      sub: 'dev-user-id',
+      sub: 'test-user-123',
       name: 'Development User'
     };
     const mockToken = `dev.mock.token.${Date.now()}`;

@@ -5,7 +5,7 @@ import { PropertiesPanel } from './components/PropertiesPanel';
 import './App.css'
 
 const AuthenticatedApp = () => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (

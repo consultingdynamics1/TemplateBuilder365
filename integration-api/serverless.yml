@@ -1,4 +1,4 @@
-service: tb365-converter-api
+service: tb365-unified-api
 
 frameworkVersion: '4'
 
@@ -7,12 +7,14 @@ provider:
   runtime: nodejs18.x
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'dev'}
+  deploymentBucket:
+    name: templatebuilder365-user-data
   environment:
     STAGE: ${self:provider.stage}
     REGION: ${self:provider.region}
     TB365_BUCKET: tb365-designs-${self:provider.stage}
     API_TEMPLATE_BUCKET: apitemplate-exports-${self:provider.stage}
-    DEV_BUCKET: TemplateBuilder365-${self:provider.stage}
+    DEV_BUCKET: templatebuilder365-${self:provider.stage}
     # Removed API_KEY - now using Cognito JWT
     NODE_ENV: ${self:provider.stage}
     OUTPUT_MODE: ${env:OUTPUT_MODE, 'response-only'}
@@ -21,6 +23,20 @@ provider:
     COGNITO_CLIENT_ID: 2addji24p0obg5sqedgise13i4
     PROJECT_VERSION_RETENTION: ${env:PROJECT_VERSION_RETENTION, '3'}
   httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      maxAge: 300
     authorizers:
       cognitoAuthorizer:
         type: jwt
@@ -37,7 +53,7 @@ provider:
       Resource:
         - "arn:aws:s3:::tb365-designs-${self:provider.stage}/*"
         - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}/*"
-        - "arn:aws:s3:::TemplateBuilder365-${self:provider.stage}/*"
+        - "arn:aws:s3:::templatebuilder365-${self:provider.stage}/*"
         - "arn:aws:s3:::templatebuilder365-user-data/*"
     - Effect: Allow
       Action:
@@ -45,13 +61,13 @@ provider:
       Resource:
         - "arn:aws:s3:::tb365-designs-${self:provider.stage}"
         - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}"
-        - "arn:aws:s3:::TemplateBuilder365-${self:provider.stage}"
+        - "arn:aws:s3:::templatebuilder365-${self:provider.stage}"
         - "arn:aws:s3:::templatebuilder365-user-data"
 
 functions:
   convertTb365ToApiTemplate:
     handler: functions/tb365-converter.handler
-    timeout: 30
+    timeout: 29
     memorySize: 512
     events:
       - httpApi:
@@ -59,61 +75,25 @@ functions:
           method: post
           authorizer:
             name: cognitoAuthorizer
-          cors:
-            allowOrigin: '*'
-            allowHeaders:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-            allowMethods:
-              - POST
-              - OPTIONS
       - httpApi:
           path: /convert/{id}
           method: get
           authorizer:
             name: cognitoAuthorizer
-          cors:
-            allowOrigin: '*'
-            allowHeaders:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-            allowMethods:
-              - GET
-              - OPTIONS
       - httpApi:
           path: /output-config
           method: get
           authorizer:
             name: cognitoAuthorizer
-          cors:
-            allowOrigin: '*'
-            allowHeaders:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-            allowMethods:
-              - GET
-              - OPTIONS
       - httpApi:
           path: /output-config
           method: post
           authorizer:
             name: cognitoAuthorizer
-          cors:
-            allowOrigin: '*'
-            allowHeaders:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-            allowMethods:
-              - POST
-              - OPTIONS
 
   # Project Management Function
   projectManager:
-    handler: functions/project-manager.handler
+    handler: project-manager-sdk-v2.handler
     timeout: 30
     memorySize: 512
     events:
@@ -122,57 +102,21 @@ functions:
           method: post
           authorizer:
             name: cognitoAuthorizer
-          cors:
-            allowOrigin: '*'
-            allowHeaders:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-            allowMethods:
-              - POST
-              - OPTIONS
       - httpApi:
           path: /api/projects/list
           method: get
           authorizer:
             name: cognitoAuthorizer
-          cors:
-            allowOrigin: '*'
-            allowHeaders:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-            allowMethods:
-              - GET
-              - OPTIONS
       - httpApi:
           path: /api/projects/load/{name}
           method: get
           authorizer:
             name: cognitoAuthorizer
-          cors:
-            allowOrigin: '*'
-            allowHeaders:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-            allowMethods:
-              - GET
-              - OPTIONS
       - httpApi:
           path: /api/projects/{name}
           method: delete
           authorizer:
             name: cognitoAuthorizer
-          cors:
-            allowOrigin: '*'
-            allowHeaders:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-            allowMethods:
-              - DELETE
-              - OPTIONS
 
   healthCheck:
     handler: functions/tb365-converter.health
@@ -243,7 +187,7 @@ resources:
     DevBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: TemplateBuilder365-${self:provider.stage}
+        BucketName: templatebuilder365-${self:provider.stage}
         VersioningConfiguration:
           Status: Enabled
         PublicAccessBlockConfiguration:
@@ -293,6 +237,17 @@ resources:
 
 plugins:
   - serverless-offline
+
+package:
+  excludeDevDependencies: true
+  patterns:
+    - '!test*'
+    - '!*.test.js'
+    - '!node_modules/**'
+    - 'node_modules/@aws-sdk/**'
+    - 'node_modules/joi/**'
+    - 'node_modules/uuid/**'
+    - 'node_modules/aws-lambda/**'
 
 custom:
   serverless-offline:

@@ -1,5 +1,5 @@
 {
-  "ENVIRONMENT": "development",
+  "ENVIRONMENT": "dev",
   "ENABLE_AUTH": "false",
   "S3_BUCKET": "templatebuilder365-user-data",
   "AWS_REGION": "us-east-1",

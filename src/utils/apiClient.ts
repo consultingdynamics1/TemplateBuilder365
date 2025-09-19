@@ -34,7 +34,7 @@ interface ProjectLoadResponse {
  */
 function getAuthToken(): string | null {
   // In development mode, we don't need auth
-  if ((CONFIG.ENVIRONMENT as string) === 'development') {
+  if ((CONFIG.ENVIRONMENT as string) === 'dev' || (CONFIG.ENVIRONMENT as string) === 'development') {
     return 'mock-jwt-token';
   }
 
@@ -51,7 +51,7 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = getAuthToken();
-  if (!token && (CONFIG.ENVIRONMENT as string) !== 'development') {
+  if (!token && (CONFIG.ENVIRONMENT as string) !== 'development' && (CONFIG.ENVIRONMENT as string) !== 'dev') {
     throw new Error('No authentication token available');
   }
 
@@ -61,7 +61,7 @@ async function apiRequest<T>(
   };
 
   // Add auth header for stage/production
-  if ((CONFIG.ENVIRONMENT as string) !== 'development') {
+  if ((CONFIG.ENVIRONMENT as string) !== 'development' && (CONFIG.ENVIRONMENT as string) !== 'dev') {
     (headers as any)['Authorization'] = `Bearer ${token}`;
   }
 
