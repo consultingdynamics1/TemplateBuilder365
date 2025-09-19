@@ -1,0 +1,678 @@
+{
+  "projectName": "Real Estate Listing Template v4",
+  "savedAt": "2025-09-18T20:20:25.435Z",
+  "version": "1.0",
+  "canvasState": {
+    "elements": [
+      {
+        "id": "header-bg-rect",
+        "type": "rectangle",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "size": {
+          "width": 800,
+          "height": 120
+        },
+        "visible": true,
+        "locked": false,
+        "name": "header-background",
+        "zIndex": 1643723400000,
+        "fill": "#2c5aa0",
+        "stroke": "#1e3f73",
+        "strokeWidth": 2,
+        "cornerRadius": 0
+      },
+      {
+        "id": "company-logo",
+        "type": "image",
+        "position": {
+          "x": 20,
+          "y": 20
+        },
+        "size": {
+          "width": 80,
+          "height": 80
+        },
+        "visible": true,
+        "locked": false,
+        "name": "company-logo",
+        "zIndex": 1643723410000,
+        "src": "",
+        "opacity": 1,
+        "fit": "contain"
+      },
+      {
+        "id": "agency-name",
+        "type": "text",
+        "position": {
+          "x": 120,
+          "y": 25
+        },
+        "size": {
+          "width": 300,
+          "height": 35
+        },
+        "visible": true,
+        "locked": false,
+        "name": "agency-name",
+        "zIndex": 1643723420000,
+        "content": "RE/MAX Realty",
+        "fontSize": 28,
+        "fontFamily": "Arial",
+        "fontWeight": "bold",
+        "fontStyle": "normal",
+        "textAlign": "left",
+        "color": "#ffffff",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "agency-tagline",
+        "type": "text",
+        "position": {
+          "x": 120,
+          "y": 65
+        },
+        "size": {
+          "width": 300,
+          "height": 25
+        },
+        "visible": true,
+        "locked": false,
+        "name": "agency-tagline",
+        "zIndex": 1643723430000,
+        "content": "Your Home, Our Priority",
+        "fontSize": 16,
+        "fontFamily": "Arial",
+        "fontWeight": "normal",
+        "fontStyle": "italic",
+        "textAlign": "left",
+        "color": "#e8f4fd",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "contact-info",
+        "type": "text",
+        "position": {
+          "x": 500,
+          "y": 25
+        },
+        "size": {
+          "width": 280,
+          "height": 70
+        },
+        "visible": true,
+        "locked": false,
+        "name": "contact-info",
+        "zIndex": 1643723440000,
+        "content": "(303) 555-1212 | jane.doe@remax.com\nhttps://www.remax.com\nLicense #ER.123456789",
+        "fontSize": 14,
+        "fontFamily": "Arial",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textAlign": "right",
+        "color": "#ffffff",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "property-title",
+        "type": "text",
+        "position": {
+          "x": 20,
+          "y": 140
+        },
+        "size": {
+          "width": 760,
+          "height": 45
+        },
+        "visible": true,
+        "locked": false,
+        "name": "property-title",
+        "zIndex": 1643723450000,
+        "content": "1234 Maple Street",
+        "fontSize": 32,
+        "fontFamily": "Georgia",
+        "fontWeight": "bold",
+        "fontStyle": "normal",
+        "textAlign": "center",
+        "color": "#2c5aa0",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "property-subtitle",
+        "type": "text",
+        "position": {
+          "x": 20,
+          "y": 190
+        },
+        "size": {
+          "width": 760,
+          "height": 25
+        },
+        "visible": true,
+        "locked": false,
+        "name": "property-subtitle",
+        "zIndex": 1643723460000,
+        "content": "Denver, CO 80202",
+        "fontSize": 18,
+        "fontFamily": "Georgia",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textAlign": "center",
+        "color": "#666666",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "main-photo",
+        "type": "image",
+        "position": {
+          "x": 20,
+          "y": 240
+        },
+        "size": {
+          "width": 460,
+          "height": 300
+        },
+        "visible": true,
+        "locked": false,
+        "name": "main-property-photo",
+        "zIndex": 1643723470000,
+        "src": "",
+        "opacity": 1,
+        "fit": "cover"
+      },
+      {
+        "id": "photo-border",
+        "type": "rectangle",
+        "position": {
+          "x": 18,
+          "y": 238
+        },
+        "size": {
+          "width": 464,
+          "height": 304
+        },
+        "visible": true,
+        "locked": false,
+        "name": "photo-frame",
+        "zIndex": 1643723465000,
+        "fill": "transparent",
+        "stroke": "#cccccc",
+        "strokeWidth": 2,
+        "cornerRadius": 4
+      },
+      {
+        "id": "price-box",
+        "type": "rectangle",
+        "position": {
+          "x": 500,
+          "y": 240
+        },
+        "size": {
+          "width": 280,
+          "height": 80
+        },
+        "visible": true,
+        "locked": false,
+        "name": "price-background",
+        "zIndex": 1643723480000,
+        "fill": "#f8f9fa",
+        "stroke": "#2c5aa0",
+        "strokeWidth": 3,
+        "cornerRadius": 8
+      },
+      {
+        "id": "price-label",
+        "type": "text",
+        "position": {
+          "x": 520,
+          "y": 250
+        },
+        "size": {
+          "width": 240,
+          "height": 25
+        },
+        "visible": true,
+        "locked": false,
+        "name": "price-label",
+        "zIndex": 1643723490000,
+        "content": "ASKING PRICE",
+        "fontSize": 14,
+        "fontFamily": "Arial",
+        "fontWeight": "bold",
+        "fontStyle": "normal",
+        "textAlign": "center",
+        "color": "#666666",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "price-amount",
+        "type": "text",
+        "position": {
+          "x": 520,
+          "y": 275
+        },
+        "size": {
+          "width": 240,
+          "height": 35
+        },
+        "visible": true,
+        "locked": false,
+        "name": "property-price",
+        "zIndex": 1643723500000,
+        "content": "$725,000",
+        "fontSize": 28,
+        "fontFamily": "Arial",
+        "fontWeight": "bold",
+        "fontStyle": "normal",
+        "textAlign": "center",
+        "color": "#2c5aa0",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "key-features",
+        "type": "table",
+        "position": {
+          "x": 500,
+          "y": 340
+        },
+        "size": {
+          "width": 280,
+          "height": 200
+        },
+        "visible": true,
+        "locked": false,
+        "name": "key-features",
+        "zIndex": 1643723510000,
+        "rows": 5,
+        "columns": 2,
+        "cells": [
+          [
+            {
+              "content": "Feature",
+              "isHeader": true
+            },
+            {
+              "content": "Details",
+              "isHeader": true
+            }
+          ],
+          [
+            {
+              "content": "Bedrooms",
+              "isHeader": false
+            },
+            {
+              "content": "4",
+              "isHeader": false
+            }
+          ],
+          [
+            {
+              "content": "Bathrooms",
+              "isHeader": false
+            },
+            {
+              "content": "3",
+              "isHeader": false
+            }
+          ],
+          [
+            {
+              "content": "Square Feet",
+              "isHeader": false
+            },
+            {
+              "content": "2,450",
+              "isHeader": false
+            }
+          ],
+          [
+            {
+              "content": "Year Built",
+              "isHeader": false
+            },
+            {
+              "content": "2015",
+              "isHeader": false
+            }
+          ]
+        ],
+        "cellPadding": 8,
+        "borderWidth": 1,
+        "borderColor": "#cccccc",
+        "headerBackground": "#2c5aa0",
+        "cellBackground": "#ffffff",
+        "textColor": "#333333",
+        "fontSize": 14,
+        "fontFamily": "Arial"
+      },
+      {
+        "id": "description-title",
+        "type": "text",
+        "position": {
+          "x": 20,
+          "y": 560
+        },
+        "size": {
+          "width": 760,
+          "height": 30
+        },
+        "visible": true,
+        "locked": false,
+        "name": "description-title",
+        "zIndex": 1643723520000,
+        "content": "Property Description",
+        "fontSize": 22,
+        "fontFamily": "Georgia",
+        "fontWeight": "bold",
+        "fontStyle": "normal",
+        "textAlign": "left",
+        "color": "#2c5aa0",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "property-description",
+        "type": "text",
+        "position": {
+          "x": 20,
+          "y": 600
+        },
+        "size": {
+          "width": 760,
+          "height": 120
+        },
+        "visible": true,
+        "locked": false,
+        "name": "property-description",
+        "zIndex": 1643723530000,
+        "content": "Beautifully maintained two-story home with an open floor plan, gourmet kitchen, hardwood floors, and a spacious backyard perfect for entertaining.",
+        "fontSize": 14,
+        "fontFamily": "Arial",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textAlign": "left",
+        "color": "#333333",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "amenities-title",
+        "type": "text",
+        "position": {
+          "x": 20,
+          "y": 740
+        },
+        "size": {
+          "width": 380,
+          "height": 30
+        },
+        "visible": true,
+        "locked": false,
+        "name": "amenities-title",
+        "zIndex": 1643723540000,
+        "content": "Amenities & Features",
+        "fontSize": 18,
+        "fontFamily": "Georgia",
+        "fontWeight": "bold",
+        "fontStyle": "normal",
+        "textAlign": "left",
+        "color": "#2c5aa0",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "amenities-table",
+        "type": "table",
+        "position": {
+          "x": 20,
+          "y": 780
+        },
+        "size": {
+          "width": 380,
+          "height": 160
+        },
+        "visible": true,
+        "locked": false,
+        "name": "amenities-list",
+        "zIndex": 1643723550000,
+        "rows": 4,
+        "columns": 2,
+        "cells": [
+          [
+            {
+              "content": "Interior",
+              "isHeader": true
+            },
+            {
+              "content": "Exterior",
+              "isHeader": true
+            }
+          ],
+          [
+            {
+              "content": "Granite Countertops",
+              "isHeader": false
+            },
+            {
+              "content": "Fenced Yard",
+              "isHeader": false
+            }
+          ],
+          [
+            {
+              "content": "Walk-in Closets",
+              "isHeader": false
+            },
+            {
+              "content": "Covered Patio",
+              "isHeader": false
+            }
+          ],
+          [
+            {
+              "content": "Gas Fireplace",
+              "isHeader": false
+            },
+            {
+              "content": "Two-Car Garage",
+              "isHeader": false
+            }
+          ]
+        ],
+        "cellPadding": 6,
+        "borderWidth": 1,
+        "borderColor": "#dddddd",
+        "headerBackground": "#f8f9fa",
+        "cellBackground": "#ffffff",
+        "textColor": "#333333",
+        "fontSize": 12,
+        "fontFamily": "Arial"
+      },
+      {
+        "id": "neighborhood-title",
+        "type": "text",
+        "position": {
+          "x": 420,
+          "y": 740
+        },
+        "size": {
+          "width": 360,
+          "height": 30
+        },
+        "visible": true,
+        "locked": false,
+        "name": "neighborhood-title",
+        "zIndex": 1643723560000,
+        "content": "Neighborhood Information",
+        "fontSize": 18,
+        "fontFamily": "Georgia",
+        "fontWeight": "bold",
+        "fontStyle": "normal",
+        "textAlign": "left",
+        "color": "#2c5aa0",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "neighborhood-details",
+        "type": "text",
+        "position": {
+          "x": 420,
+          "y": 780
+        },
+        "size": {
+          "width": 360,
+          "height": 160
+        },
+        "visible": true,
+        "locked": false,
+        "name": "neighborhood-info",
+        "zIndex": 1643723570000,
+        "content": "School District: Denver Public Schools\n\nNearby:\n• Shopping: Cherry Creek Shopping Center\n• Parks: Washington Park\n• Transit: Light Rail (10 min)\n\nWalk Score: 82/100",
+        "fontSize": 12,
+        "fontFamily": "Arial",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textAlign": "left",
+        "color": "#333333",
+        "backgroundColor": "transparent",
+        "padding": 8
+      },
+      {
+        "id": "agent-photo",
+        "type": "image",
+        "position": {
+          "x": 20,
+          "y": 970
+        },
+        "size": {
+          "width": 100,
+          "height": 120
+        },
+        "visible": true,
+        "locked": false,
+        "name": "agent-photo",
+        "zIndex": 1643723580000,
+        "src": "",
+        "opacity": 1,
+        "fit": "cover"
+      },
+      {
+        "id": "agent-info",
+        "type": "text",
+        "position": {
+          "x": 24.28571428571422,
+          "y": 957.1428571428571
+        },
+        "size": {
+          "width": 300,
+          "height": 120
+        },
+        "visible": true,
+        "locked": false,
+        "name": "agent-details",
+        "zIndex": 1643723590000,
+        "content": "Your Real Estate Agent\n\nJane Doe\nSenior Broker\n\nDirect: (303) 555-2323\nEmail: jane.doe@remax.com",
+        "fontSize": 14,
+        "fontFamily": "Arial",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textAlign": "left",
+        "color": "#333333",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "cta-background",
+        "type": "rectangle",
+        "position": {
+          "x": 460,
+          "y": 970
+        },
+        "size": {
+          "width": 320,
+          "height": 120
+        },
+        "visible": true,
+        "locked": false,
+        "name": "call-to-action-bg",
+        "zIndex": 1643723600000,
+        "fill": "#2c5aa0",
+        "stroke": "#1e3f73",
+        "strokeWidth": 2,
+        "cornerRadius": 8
+      },
+      {
+        "id": "cta-text",
+        "type": "text",
+        "position": {
+          "x": 480,
+          "y": 990
+        },
+        "size": {
+          "width": 280,
+          "height": 80
+        },
+        "visible": true,
+        "locked": false,
+        "name": "call-to-action",
+        "zIndex": 1643723610000,
+        "content": "Ready to Schedule a Showing?\n\nCall Today: (303) 555-7890\n\nListing ID: MLS# 987654",
+        "fontSize": 14,
+        "fontFamily": "Arial",
+        "fontWeight": "bold",
+        "fontStyle": "normal",
+        "textAlign": "center",
+        "color": "#ffffff",
+        "backgroundColor": "transparent",
+        "padding": 0
+      },
+      {
+        "id": "footer-disclaimer",
+        "type": "text",
+        "position": {
+          "x": 20,
+          "y": 1110
+        },
+        "size": {
+          "width": 760,
+          "height": 40
+        },
+        "visible": true,
+        "locked": false,
+        "name": "legal-disclaimer",
+        "zIndex": 1643723620000,
+        "content": "All information deemed reliable but not guaranteed. | Equal Housing Opportunity | Information deemed reliable but not guaranteed.",
+        "fontSize": 10,
+        "fontFamily": "Arial",
+        "fontWeight": "normal",
+        "fontStyle": "italic",
+        "textAlign": "center",
+        "color": "#666666",
+        "backgroundColor": "transparent",
+        "padding": 0
+      }
+    ],
+    "selectedElementId": null,
+    "editingElementId": null,
+    "activeTool": "select",
+    "canvasSize": {
+      "width": 800,
+      "height": 1170
+    },
+    "zoom": 0.40000000000000013,
+    "snapToGrid": false,
+    "gridSize": 20,
+    "storageMode": "local"
+  }
+}

@@ -1,6 +1,17 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { CanvasState, TemplateElement, ToolType, ElementType } from '../types/index';
+import type { CanvasState, TemplateElement, ToolType, ElementType, StorageMode } from '../types/index';
+import { CONFIG } from '../config/environment';
+
+// Determine default storage mode based on environment
+const getDefaultStorageMode = (): StorageMode => {
+  // If API_ENDPOINT points to AWS, use cloud storage even in development
+  if (CONFIG.API_ENDPOINT.includes('amazonaws.com')) {
+    return 'cloud';
+  }
+  // Otherwise, development defaults to local, stage/production default to cloud
+  return (CONFIG.ENVIRONMENT as string) === 'development' ? 'local' : 'cloud';
+};
 
 interface CanvasStore extends CanvasState {
   addElement: (elementType: ElementType, position: { x: number; y: number }) => void;
@@ -26,6 +37,7 @@ interface CanvasStore extends CanvasState {
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
   loadCanvasState: (canvasState: CanvasState) => void;
+  setStorageMode: (mode: StorageMode) => void;
 }
 
 const createDefaultElement = (
@@ -129,6 +141,7 @@ export const useCanvasStore = create<CanvasStore>()(
     zoom: 1,
     snapToGrid: false,
     gridSize: 20,
+    storageMode: getDefaultStorageMode(),
 
     addElement: (elementType, position) =>
       set((state) => {
@@ -320,6 +333,13 @@ export const useCanvasStore = create<CanvasStore>()(
         state.zoom = canvasState.zoom || 1;
         state.snapToGrid = canvasState.snapToGrid || false;
         state.gridSize = canvasState.gridSize || 20;
+        // Storage mode defaults to environment-appropriate if not specified
+        state.storageMode = canvasState.storageMode || getDefaultStorageMode();
+      }),
+
+    setStorageMode: (mode) =>
+      set((state) => {
+        state.storageMode = mode;
       }),
   }))
 );

@@ -47,11 +47,28 @@ export interface ImageElement extends BaseElement {
   fit: 'fill' | 'contain' | 'cover' | 'stretch';
 }
 
-export type TemplateElement = TextElement | RectangleElement | ImageElement;
+export interface TableElement extends BaseElement {
+  type: 'table';
+  rows: number;
+  columns: number;
+  cells: Array<Array<{ content: string; isHeader: boolean }>>;
+  cellPadding: number;
+  borderWidth: number;
+  borderColor: string;
+  headerBackground: string;
+  cellBackground: string;
+  textColor: string;
+  fontSize: number;
+  fontFamily: string;
+}
 
-export type ElementType = 'text' | 'rectangle' | 'image';
+export type TemplateElement = TextElement | RectangleElement | ImageElement | TableElement;
 
-export type ToolType = 'select' | 'text' | 'rectangle' | 'image';
+export type ElementType = 'text' | 'rectangle' | 'image' | 'table';
+
+export type ToolType = 'select' | 'text' | 'rectangle' | 'image' | 'table';
+
+export type StorageMode = 'local' | 'cloud';
 
 export interface CanvasState {
   elements: TemplateElement[];
@@ -62,6 +79,7 @@ export interface CanvasState {
   zoom: number;
   snapToGrid: boolean;
   gridSize: number;
+  storageMode: StorageMode;
 }
 
 export interface TemplateData {

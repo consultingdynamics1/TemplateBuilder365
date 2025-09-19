@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useAuth } from '../../auth';
+import { CONFIG } from '../../config/environment';
 import type { ToolType } from '../../types/index';
 import { saveProjectFile, loadProjectFromFile, getExistingProjectNames, loadProjectFromStorage, getCloudProjectNames } from '../../utils/projectFiles';
 import { SaveDialog } from '../SaveDialog/SaveDialog';
@@ -83,6 +84,7 @@ export const Toolbar: React.FC = () => {
     setStorageMode
   } = useCanvasStore();
 
+  const { user } = useAuth();
   const [saveStatus, setSaveStatus] = React.useState<string>('');
   const [isSaving, setIsSaving] = React.useState(false);
   const [loadStatus, setLoadStatus] = React.useState<string>('');
@@ -90,6 +92,8 @@ export const Toolbar: React.FC = () => {
   const [showLoadDialog, setShowLoadDialog] = React.useState(false);
   const [currentDocumentName, setCurrentDocumentName] = React.useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [exportStatus, setExportStatus] = React.useState<string>('');
+  const [isExporting, setIsExporting] = React.useState(false);
 
   const handleSaveProject = () => {
     // Generate default name if none exists
@@ -191,6 +195,107 @@ export const Toolbar: React.FC = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  // Export handlers
+  const handleExportHTML = async () => {
+    if (elements.length === 0) {
+      setExportStatus('No elements to export');
+      setTimeout(() => setExportStatus(''), 3000);
+      return;
+    }
+
+    setIsExporting(true);
+    setExportStatus('Converting to HTML...');
+
+    try {
+      // Prepare TB365 data format
+      const tb365Data = {
+        projectName: currentDocumentName || 'Untitled Template',
+        version: '1.0',
+        canvasState: {
+          elements: elements,
+          canvasSize: canvasSize
+        }
+      };
+
+      // Call our conversion API (for development, we'll use the local mock server)
+      const converterEndpoint = CONFIG.ENVIRONMENT === 'development'
+        ? 'http://localhost:3001/convert'
+        : `${CONFIG.API_ENDPOINT}/convert`;
+
+      // Prepare headers - skip authentication in development mode
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      // Only add authorization header if we have a real token (not development)
+      if (CONFIG.ENVIRONMENT !== 'development' && user?.accessToken) {
+        headers['Authorization'] = `Bearer ${user.accessToken}`;
+      }
+
+      const response = await fetch(converterEndpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          tb365Data,
+          options: {}
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Download the HTML file
+      downloadHTML(result.htmlResult.html, tb365Data.projectName);
+
+      setExportStatus(`Exported: ${tb365Data.projectName}.html`);
+      setTimeout(() => setExportStatus(''), 3000);
+
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportStatus('Export failed');
+      setTimeout(() => setExportStatus(''), 3000);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (elements.length === 0) {
+      setExportStatus('No elements to export');
+      setTimeout(() => setExportStatus(''), 3000);
+      return;
+    }
+
+    // First export to HTML, then convert to PDF client-side
+    handleExportHTML().then(() => {
+      setExportStatus('Opening PDF preview...');
+
+      // For now, we'll use the browser's print dialog
+      // This allows the user to save as PDF
+      setTimeout(() => {
+        window.print();
+        setExportStatus('Use browser print dialog to save as PDF');
+        setTimeout(() => setExportStatus(''), 5000);
+      }, 1000);
+    });
+  };
+
+  // Helper function to download HTML file
+  const downloadHTML = (htmlContent: string, filename: string) => {
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const tools = [
@@ -325,6 +430,40 @@ export const Toolbar: React.FC = () => {
           <span className="storage-label">
             {storageMode === 'cloud' ? 'Cloud Storage' : 'Local Files'}
           </span>
+        </div>
+      </div>
+
+      {/* Export Section */}
+      <div className="toolbar-section">
+        <div className="tool-group">
+          <button
+            className="tool-button"
+            onClick={handleExportHTML}
+            disabled={isExporting || elements.length === 0}
+            title="Export to HTML"
+            type="button"
+          >
+            <span className="tool-icon">{isExporting ? '⏳' : '🌐'}</span>
+          </button>
+          <button
+            className="tool-button"
+            onClick={handleExportPDF}
+            disabled={isExporting || elements.length === 0}
+            title="Export to PDF"
+            type="button"
+          >
+            <span className="tool-icon">📄</span>
+          </button>
+          {exportStatus && (
+            <span style={{
+              fontSize: '0.75rem',
+              color: exportStatus.includes('failed') ? '#f44336' : '#4caf50',
+              marginLeft: '8px',
+              whiteSpace: 'nowrap'
+            }}>
+              {exportStatus}
+            </span>
+          )}
         </div>
       </div>
 
