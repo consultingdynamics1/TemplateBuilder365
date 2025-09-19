@@ -1,17 +1,28 @@
-export const CONFIG = {
-  ENVIRONMENT: 'dev',           // 'development' | 'stage' | 'production'
-  S3_BUCKET: 'templatebuilder365-user-data',              // 'templatebuilder365-user-data'
-  AWS_REGION: 'us-east-1',            // 'us-east-1'
-  COGNITO_USER_POOL_ID: 'mock-user-pool',  // 'us-east-1_RIOPGg1Cq'
-  COGNITO_CLIENT_ID: 'mock-client-id',         // '2addji24p0obg5sqedgise13i4'
-  API_ENDPOINT: 'https://jczxdnaz4m.execute-api.us-east-1.amazonaws.com/stage',        // Lambda API URLs
-  ENABLE_AUTH: 'false',          // 'false' for dev, 'true' for stage/prod
-  COGNITO_DOMAIN: 'mock.auth.us-east-1.amazoncognito.com'     // Cognito hosted UI domain
-} as const;
+// Smart environment configuration loader
+// Uses Vite environment variables to select the correct config at build time
 
-export type Environment = 'development' | 'stage' | 'production';
+import type { CONFIG as ConfigType } from './environment.dev';
 
-export const isDevelopment = () => CONFIG.ENVIRONMENT === 'development' || CONFIG.ENVIRONMENT === 'dev';
-export const isStage = () => CONFIG.ENVIRONMENT === 'stage';
-export const isProduction = () => CONFIG.ENVIRONMENT === 'production';
-export const isAuthEnabled = () => CONFIG.ENABLE_AUTH === 'true';
+// Get the environment from Vite environment variables
+const env = import.meta.env.VITE_APP_ENV || 'dev';
+
+let envConfig: typeof import('./environment.dev');
+
+switch (env) {
+  case 'stage':
+    envConfig = await import('./environment.stage');
+    break;
+  case 'production':
+  case 'prod':
+    envConfig = await import('./environment.prod');
+    break;
+  case 'dev':
+  case 'development':
+  default:
+    envConfig = await import('./environment.dev');
+    break;
+}
+
+// Re-export all configuration from the selected environment
+export const { CONFIG, isDevelopment, isStage, isProduction, isAuthEnabled } = envConfig;
+export type { Environment } from './environment.dev';

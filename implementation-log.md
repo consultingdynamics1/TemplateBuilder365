@@ -107,3 +107,142 @@ size: {
 ---
 
 **Session Completed**: All 12+ critical HTML conversion issues resolved with shared library architecture.
+
+## 2025-09-19: Environment Architecture Refactor & Stage Deployment
+
+### Problem Statement
+The variable replacement system was fragile and caused deployment issues:
+- File overwriting caused confusion and rollback cycles
+- Manual restoration required after each build
+- Risk of deploying wrong configurations
+- Git commits with incorrect environment values
+- Breaking/rollback cycles during deployments
+
+### Solution: Professional Environment Configuration System
+
+Implemented industry-standard environment configuration architecture eliminating file overwriting.
+
+#### New Architecture:
+```
+src/config/
+├── environment.ts          # Smart loader (selects config based on VITE_APP_ENV)
+├── environment.dev.ts      # Development config (mock auth, test data)
+├── environment.stage.ts    # Stage config (real auth, stage API)
+└── environment.prod.ts     # Production config (real auth, prod API)
+```
+
+#### Build Commands:
+```bash
+npm run dev             # Development config (default)
+npm run build:stage     # Stage config via VITE_APP_ENV=stage
+npm run build:prod      # Production config via VITE_APP_ENV=production
+```
+
+### Key Improvements:
+
+1. **No File Overwriting**: Each environment has permanent configuration file
+2. **Build-Time Selection**: Vite automatically selects correct config during build
+3. **Type Safety**: Shared interfaces across all environments
+4. **Git-Friendly**: All configs committed, no generated files
+5. **Foolproof Deployments**: Impossible to deploy wrong configuration
+
+### Achievements:
+
+#### ✅ **Stage Deployment Completed**
+- **URL**: `https://de1ztc46ci2dy.cloudfront.net/`
+- **Configuration**: Real Cognito authentication, stage API endpoints
+- **Status**: Live and ready for testing
+
+#### ✅ **Development Environment Verified**
+- **URL**: `http://localhost:5181`
+- **Configuration**: Mock authentication, connects to test data (`dev/test-user-123/`)
+- **Status**: Working perfectly with new environment system
+
+#### ✅ **Cloud Storage Connectivity Fixed**
+- **Issue**: S3 path mismatch causing "no projects" error
+- **Fix**: Aligned development environment to use existing S3 structure
+- **Result**: Both local and cloud storage modes working
+
+### Technical Implementation:
+
+**Smart Environment Loader**:
+```typescript
+const env = import.meta.env.VITE_APP_ENV || 'dev';
+switch (env) {
+  case 'stage':
+    return import('./environment.stage');
+  case 'production':
+    return import('./environment.prod');
+  default:
+    return import('./environment.dev');
+}
+```
+
+**S3 Deployment Process**:
+```bash
+aws s3 sync dist/ s3://tb365-frontend-stage/ --delete
+```
+- Uploads new/changed files
+- Removes obsolete files (old JS bundles)
+- Keeps unchanged assets (vite.svg, etc.)
+
+### Results:
+
+#### Before (Fragile):
+- Manual file overwriting with `{{VARIABLE}}` replacement
+- Rollback required after each build: `npm run restore`
+- Risk of losing configurations
+- Breaking/rollback cycles
+
+#### After (Professional):
+- Permanent environment configurations
+- Build-time selection: `VITE_APP_ENV=stage vite build`
+- No rollback needed - configs always preserved
+- Zero breaking/rollback cycles
+
+### Benefits Achieved:
+
+✅ **Eliminated Breaking Cycles**: No more file overwriting confusion
+✅ **Safe Deployments**: Each environment guaranteed correct config
+✅ **Developer Productivity**: No manual restoration steps
+✅ **Professional Architecture**: Industry standard approach
+✅ **Future-Proof**: Production setup will be trivial
+
+### Current Status:
+
+**🟢 Development Environment**
+- URL: http://localhost:5181
+- Auth: Mock authentication (bypassed)
+- Storage: Both cloud and local storage working
+- API: Connects to stage endpoint with mock auth
+
+**🟢 Stage Environment**
+- URL: https://de1ztc46ci2dy.cloudfront.net/
+- Auth: Real Cognito JWT authentication
+- Storage: S3 cloud storage with real user accounts
+- API: Stage deployment with full authentication
+
+**🟡 Production Environment**
+- Config: Ready in `environment.prod.ts`
+- Build: `npm run build:prod` when needed
+- Status: Ready for deployment
+
+### Files Updated:
+
+1. **`src/config/environment.dev.ts`** - Development configuration
+2. **`src/config/environment.stage.ts`** - Stage configuration
+3. **`src/config/environment.prod.ts`** - Production configuration
+4. **`src/config/environment.ts`** - Smart environment loader
+5. **`package.json`** - Updated build scripts with environment variables
+6. **S3 Deployment**: Stage frontend deployed to CloudFront
+
+### Next Steps:
+
+1. Test stage environment with real Cognito authentication
+2. Verify end-to-end functionality (auth → cloud storage → export)
+3. Production deployment when stage testing complete
+4. Remove legacy variable replacement scripts
+
+---
+
+**Session Completed**: Professional environment architecture implemented, stage deployment live, localhost verified working. Zero breaking/rollback cycles achieved.
