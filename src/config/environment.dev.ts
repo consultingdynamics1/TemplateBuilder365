@@ -1,4 +1,15 @@
-export const CONFIG = {
+export interface ConfigInterface {
+  ENVIRONMENT: 'dev' | 'stage' | 'production';
+  S3_BUCKET: string;
+  AWS_REGION: string;
+  COGNITO_USER_POOL_ID: string;
+  COGNITO_CLIENT_ID: string;
+  API_ENDPOINT: string;
+  ENABLE_AUTH: 'true' | 'false';
+  COGNITO_DOMAIN: string;
+}
+
+export const CONFIG: ConfigInterface = {
   ENVIRONMENT: 'dev',
   S3_BUCKET: 'templatebuilder365-user-data',
   AWS_REGION: 'us-east-1',
@@ -7,7 +18,7 @@ export const CONFIG = {
   API_ENDPOINT: 'https://jczxdnaz4m.execute-api.us-east-1.amazonaws.com/stage',
   ENABLE_AUTH: 'false',
   COGNITO_DOMAIN: 'mock.auth.us-east-1.amazoncognito.com'
-} as const;
+};
 
 export type Environment = 'dev' | 'stage' | 'production';
 

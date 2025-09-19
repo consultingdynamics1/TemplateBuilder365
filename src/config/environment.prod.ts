@@ -1,4 +1,6 @@
-export const CONFIG = {
+import type { ConfigInterface } from './environment.dev';
+
+export const CONFIG: ConfigInterface = {
   ENVIRONMENT: 'production',
   S3_BUCKET: 'templatebuilder365-user-data',
   AWS_REGION: 'us-east-1',
@@ -7,7 +9,7 @@ export const CONFIG = {
   API_ENDPOINT: 'https://api.templatebuilder365.com',
   ENABLE_AUTH: 'true',
   COGNITO_DOMAIN: 'us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com'
-} as const;
+};
 
 export type Environment = 'dev' | 'stage' | 'production';
 

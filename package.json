@@ -6,11 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:dev": "VITE_APP_ENV=dev vite build",
-    "build:stage": "VITE_APP_ENV=stage vite build",
-    "build:prod": "VITE_APP_ENV=production vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:stage": "npm run build && aws s3 sync dist/ s3://tb365-frontend-stage/ --delete",
+    "deploy:prod": "npm run build && aws s3 sync dist/ s3://tb365-frontend-prod/ --delete"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.890.0",
