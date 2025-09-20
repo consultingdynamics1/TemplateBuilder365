@@ -59,3 +59,5 @@ package:
     - 'node_modules/@aws-sdk/**'
     - 'node_modules/joi/**'
     - 'node_modules/uuid/**'
+    - 'handler.js'
+    - 'tb365-converter.cjs'
