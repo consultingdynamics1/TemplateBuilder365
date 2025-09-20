@@ -50,11 +50,35 @@ TemplateBuilder365/
 ## 🔗 Key Resources
 - **Frontend**: http://localhost:5174 (development)
 - **Stage**: https://de1ztc46ci2dy.cloudfront.net/ (staging)
-- **API**: https://jczxdnaz4m.execute-api.us-east-1.amazonaws.com/stage
+- **S3 API**: https://keipbp2fel.execute-api.us-east-1.amazonaws.com (projects/images)
+- **HTML Converter**: https://3r46i2h8rl.execute-api.us-east-1.amazonaws.com/convert (stage)
 - **S3 Bucket**: templatebuilder365-user-data
 
 ## 📖 Implementation History
 For complete implementation details, technical decisions, and step-by-step development history, see [CLAUDE-ARCHIVE.md](CLAUDE-ARCHIVE.md).
+
+## 🚀 Latest Update: HTML Converter Deployment Complete (2025-09-20)
+
+**✅ STAGE DEPLOYMENT SUCCESSFUL:**
+- **HTML Converter API**: https://3r46i2h8rl.execute-api.us-east-1.amazonaws.com/convert
+- **Frontend Environment**: https://de1ztc46ci2dy.cloudfront.net/ (with HTTPS + Cognito auth)
+- **Complete Workflow**: Authentication + S3 storage + HTML conversion ready for testing
+
+**✅ CONFIGURATION ARCHITECTURE:**
+- **Development**: Uses localhost:3001 (preserves existing dev pipeline)
+- **Stage**: Uses dedicated HTML converter endpoint (newly deployed)
+- **Production**: Ready for future production deployment
+- **Environment Detection**: Smart runtime detection based on hostname/domain
+
+**✅ TECHNICAL ACCOMPLISHMENTS:**
+- Resolved AWS quarantine policy blocking serverless deployments
+- Fixed Lambda package size issues (2.1MB vs 250MB+) using minimal converter
+- Added CONVERTER_ENDPOINT configuration without breaking dev environment
+- Successfully deployed both backend (Lambda) and frontend (S3/CloudFront)
+- Maintained separation between S3 API and HTML converter services
+
+**🎯 NEXT PHASE:**
+Ready for end-to-end testing of complete stage workflow: Login → Create/Edit → Save → Export HTML
 
 ---
 *This guide provides focused navigation to project documentation. All detailed implementation history and technical specifications are preserved in the archive.*
