@@ -7,6 +7,7 @@ import {
   listProjectsFromAPI,
   deleteProjectFromAPI
 } from './apiClient';
+import { imageService } from './imageService';
 
 // Helper to get current user ID from auth context
 // In a real app, this would import useAuth hook
@@ -70,6 +71,72 @@ export function createProjectFile(
 }
 
 /**
+ * Smart image upload: Convert blob URLs to S3 URLs during save
+ * Only uploads images that are still blob URLs (new images)
+ */
+async function processImageUploads(
+  projectName: string,
+  canvasState: CanvasState
+): Promise<CanvasState> {
+  // Skip image processing in development mode
+  if (isDevelopment()) {
+    return canvasState;
+  }
+
+  // Find all image elements with blob URLs
+  const imageElements = canvasState.elements.filter(
+    element => element.type === 'image' &&
+    element.src &&
+    imageService.isBlobUrl(element.src)
+  );
+
+  if (imageElements.length === 0) {
+    console.log('📷 No blob images to upload');
+    return canvasState;
+  }
+
+  console.log(`📷 Uploading ${imageElements.length} blob images to S3 for project: ${projectName}`);
+
+  // Process each blob image and upload to S3
+  const updatedElements = await Promise.all(
+    canvasState.elements.map(async (element) => {
+      if (element.type === 'image' && element.src && imageService.isBlobUrl(element.src)) {
+        try {
+          // Convert blob URL back to File for upload
+          const file = await imageService.blobToFile(element.src, `image-${element.id}.jpg`);
+
+          // Upload to S3 project folder
+          const result = await imageService.uploadImageToProject(file, projectName);
+
+          if (result.success) {
+            console.log(`✅ Uploaded blob image: ${element.id} → ${result.filename}`);
+
+            // Clean up the blob URL
+            imageService.revokeImageUrl(element.src);
+
+            // Return element with S3 URL
+            return { ...element, src: result.imageUrl };
+          } else {
+            console.warn(`⚠️ Failed to upload image ${element.id}: ${result.error}`);
+            return element; // Keep blob URL as fallback
+          }
+        } catch (error) {
+          console.error(`❌ Error uploading blob image ${element.id}:`, error);
+          return element; // Keep blob URL as fallback
+        }
+      }
+      return element; // Non-image or already S3 URL
+    })
+  );
+
+  // Return updated canvas state with S3 URLs
+  return {
+    ...canvasState,
+    elements: updatedElements
+  };
+}
+
+/**
  * Save project file with storage mode-aware routing
  */
 export async function saveProjectFile(
@@ -88,11 +155,15 @@ export async function saveProjectFile(
     return await saveProjectFileLocal(projectName, canvasState);
   }
 
-  // Cloud storage mode: Use Lambda API endpoints
+  // Cloud storage mode: Process blob images first, then save to Lambda API
   try {
     console.log(`☁️ Saving to cloud via API: project=${projectName}, env=${CONFIG.ENVIRONMENT}`);
 
-    const result = await saveProjectToAPI(projectName, canvasState);
+    // Step 1: Upload any blob images to S3 and update canvas state
+    const processedCanvasState = await processImageUploads(projectName, canvasState);
+
+    // Step 2: Save project with updated S3 URLs
+    const result = await saveProjectToAPI(projectName, processedCanvasState);
     console.log(`✅ Cloud save successful: ${result.message}`);
     return projectName;
   } catch (error) {

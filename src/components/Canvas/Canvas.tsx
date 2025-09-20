@@ -125,23 +125,21 @@ export const Canvas: React.FC = () => {
           // Create image element from dropped file with environment-aware upload
           addElement('image', actualPos);
 
-          // Update the element with the image data
-          setTimeout(async () => {
+          // Update the element with blob URL (deferred upload until save)
+          setTimeout(() => {
             const { elements, updateElement } = useCanvasStore.getState();
             const latestElement = elements[elements.length - 1];
             if (latestElement && latestElement.type === 'image') {
               try {
-                const result = await imageService.uploadImage(imageFile);
-                updateElement(latestElement.id, { src: result.imageUrl });
-
-                if (result.error) {
-                  console.warn('Image upload warning:', result.error);
-                }
+                // Always use blob URL - upload happens during save
+                const blobUrl = imageService.createBlobUrl(imageFile);
+                updateElement(latestElement.id, { src: blobUrl });
               } catch (error) {
-                console.error('Failed to upload dropped image:', error);
-                // Fallback to local blob URL
-                const url = URL.createObjectURL(imageFile);
-                updateElement(latestElement.id, { src: url });
+                console.error('Image validation failed:', error);
+                alert(`Image upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                // Remove the element since image failed validation
+                const { deleteElement } = useCanvasStore.getState();
+                deleteElement(latestElement.id);
               }
             }
           }, 0);
@@ -158,23 +156,21 @@ export const Canvas: React.FC = () => {
       // Create the image element and immediately update it with environment-aware upload
       addElement('image', position);
 
-      // Get the element that was just created and update it with the image data
-      setTimeout(async () => {
+      // Get the element that was just created and update it with blob URL
+      setTimeout(() => {
         const { elements, updateElement } = useCanvasStore.getState();
         const latestElement = elements[elements.length - 1];
         if (latestElement && latestElement.type === 'image') {
           try {
-            const result = await imageService.uploadImage(file);
-            updateElement(latestElement.id, { src: result.imageUrl });
-
-            if (result.error) {
-              console.warn('Image upload warning:', result.error);
-            }
+            // Always use blob URL - upload happens during save
+            const blobUrl = imageService.createBlobUrl(file);
+            updateElement(latestElement.id, { src: blobUrl });
           } catch (error) {
-            console.error('Failed to upload image:', error);
-            // Fallback to local blob URL
-            const url = URL.createObjectURL(file);
-            updateElement(latestElement.id, { src: url });
+            console.error('Image validation failed:', error);
+            alert(`Image upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            // Remove the element since image failed validation
+            const { deleteElement } = useCanvasStore.getState();
+            deleteElement(latestElement.id);
           }
         }
       }, 0);

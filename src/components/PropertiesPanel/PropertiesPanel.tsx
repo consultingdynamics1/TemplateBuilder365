@@ -218,20 +218,21 @@ const ImageProperties: React.FC<{ element: ImageElement }> = ({ element }) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       try {
-        const result = await imageService.uploadImage(file);
-        handleUpdate({ src: result.imageUrl });
-
-        if (result.error) {
-          console.warn('Image upload warning:', result.error);
-        }
+        // Always use blob URL - upload happens during save
+        const blobUrl = imageService.createBlobUrl(file);
+        handleUpdate({ src: blobUrl });
       } catch (error) {
-        console.error('Failed to upload image:', error);
-        // Fallback to local blob URL
-        const url = URL.createObjectURL(file);
-        handleUpdate({ src: url });
+        console.error('Image validation failed:', error);
+        alert(`Image upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        // Reset file input on validation failure
+        event.target.value = '';
+        return;
       }
+    } else if (file) {
+      // Non-image file selected
+      alert('Please select a valid image file (JPG, PNG, or WebP).');
+      event.target.value = '';
     }
-    event.target.value = '';
   };
 
   const triggerFileUpload = () => {
