@@ -198,17 +198,52 @@ export interface ConfigInterface {
 - **Stage URL**: `https://de1ztc46ci2dy.cloudfront.net/` (HTTPS with authentication)
 - **Development**: Preserved existing localhost:3001 pipeline
 
+#### 4. HTML Converter Critical Issues Resolution
+**Problem**: Multiple deployment and runtime issues with HTML converter Lambda
+**Solution**: Systematic resolution of authentication, packaging, and dependency issues
+
+**Issues & Fixes**:
+1. **401 Unauthorized**: Frontend using non-existent `user.accessToken`
+   - Fixed: Changed to use `token` from `useAuth()` hook
+   - File: `src/components/Toolbar/Toolbar.tsx`
+
+2. **500 Error - Missing Files**: `tb365-converter.cjs` not included in Lambda package
+   - Fixed: Added explicit file patterns to serverless.yml
+   - Files: `handler.js`, `tb365-converter.cjs`
+
+3. **500 Error - Missing Dependencies**: Joi validation failing due to missing `@hapi/hoek`
+   - Fixed: Added complete Joi dependency chain to package patterns
+   - Dependencies: `@hapi/**`, `@sideway/**`
+
+**Technical Details**:
+```yaml
+# Final working package patterns
+package:
+  patterns:
+    - '!node_modules/**'
+    - 'node_modules/@aws-sdk/**'
+    - 'node_modules/joi/**'
+    - 'node_modules/@hapi/**'      # Added for Joi dependencies
+    - 'node_modules/@sideway/**'   # Added for Joi dependencies
+    - 'node_modules/uuid/**'
+    - 'handler.js'                # Added explicit inclusion
+    - 'tb365-converter.cjs'       # Added explicit inclusion
+```
+
 ### 🧪 Testing Status
 **Stage Environment Verified**:
 - ✅ Authentication flow working (Cognito JWT)
 - ✅ Project save/load operations to S3
 - ✅ HTML converter deployed and accessible
-- ⏳ End-to-end HTML export testing needed
+- ✅ JWT authentication fix deployed for HTML converter
+- ✅ Complete dependency chain resolved and deployed
+- ✅ Lambda health check confirmed working (200 OK)
+- ✅ Ready for end-to-end HTML export testing
 
 ### 🎯 Next Steps
-- Test HTML export functionality in stage environment
-- Verify complete workflow: Authentication + S3 + HTML conversion
+- Manual testing of complete workflow: Authentication + S3 + HTML conversion
 - Production deployment when stage validation complete
+- Performance monitoring and optimization
 
 ### 🔍 Technical Decisions Made
 1. **Minimal Converter Approach**: Use focused HTML conversion Lambda instead of full integration-api to avoid package size limits
