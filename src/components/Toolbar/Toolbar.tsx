@@ -84,7 +84,7 @@ export const Toolbar: React.FC = () => {
     setStorageMode
   } = useCanvasStore();
 
-  const { user } = useAuth();
+  const { token } = useAuth();
   const [saveStatus, setSaveStatus] = React.useState<string>('');
   const [isSaving, setIsSaving] = React.useState(false);
   const [loadStatus, setLoadStatus] = React.useState<string>('');
@@ -230,8 +230,8 @@ export const Toolbar: React.FC = () => {
       };
 
       // Only add authorization header if we have a real token (not development)
-      if (!isDevelopment() && user?.accessToken) {
-        headers['Authorization'] = `Bearer ${user.accessToken}`;
+      if (!isDevelopment() && token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
 
       const response = await fetch(converterEndpoint, {
