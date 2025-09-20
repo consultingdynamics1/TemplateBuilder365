@@ -3,6 +3,7 @@ import { Stage, Layer, Transformer, Rect, Line } from 'react-konva';
 import Konva from 'konva';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { CanvasElement } from './CanvasElement';
+import { imageService } from '../../utils/imageService';
 import type { TableElement } from '../../types';
 
 export const Canvas: React.FC = () => {
@@ -121,16 +122,27 @@ export const Canvas: React.FC = () => {
             y: (pointerPos.y - (stage.y() || 0)) / zoom,
           };
           
-          // Create image element from dropped file
-          const url = URL.createObjectURL(imageFile);
+          // Create image element from dropped file with environment-aware upload
           addElement('image', actualPos);
-          
+
           // Update the element with the image data
-          setTimeout(() => {
+          setTimeout(async () => {
             const { elements, updateElement } = useCanvasStore.getState();
             const latestElement = elements[elements.length - 1];
             if (latestElement && latestElement.type === 'image') {
-              updateElement(latestElement.id, { src: url });
+              try {
+                const result = await imageService.uploadImage(imageFile);
+                updateElement(latestElement.id, { src: result.imageUrl });
+
+                if (result.error) {
+                  console.warn('Image upload warning:', result.error);
+                }
+              } catch (error) {
+                console.error('Failed to upload dropped image:', error);
+                // Fallback to local blob URL
+                const url = URL.createObjectURL(imageFile);
+                updateElement(latestElement.id, { src: url });
+              }
             }
           }, 0);
         }
@@ -138,26 +150,36 @@ export const Canvas: React.FC = () => {
     }
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     const position = pendingImagePosition;
-    
+
     if (file && file.type.startsWith('image/') && position) {
-      const url = URL.createObjectURL(file);
-      
-      // Create the image element and immediately update it with the file URL
+      // Create the image element and immediately update it with environment-aware upload
       addElement('image', position);
-      
+
       // Get the element that was just created and update it with the image data
-      setTimeout(() => {
+      setTimeout(async () => {
         const { elements, updateElement } = useCanvasStore.getState();
         const latestElement = elements[elements.length - 1];
         if (latestElement && latestElement.type === 'image') {
-          updateElement(latestElement.id, { src: url });
+          try {
+            const result = await imageService.uploadImage(file);
+            updateElement(latestElement.id, { src: result.imageUrl });
+
+            if (result.error) {
+              console.warn('Image upload warning:', result.error);
+            }
+          } catch (error) {
+            console.error('Failed to upload image:', error);
+            // Fallback to local blob URL
+            const url = URL.createObjectURL(file);
+            updateElement(latestElement.id, { src: url });
+          }
         }
       }, 0);
     }
-    
+
     // Reset states
     setPendingImagePosition(null);
     event.target.value = '';

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCanvasStore } from '../../stores/canvasStore';
+import { imageService } from '../../utils/imageService';
 import type { TemplateElement, TextElement, RectangleElement, ImageElement, TableElement } from '../../types';
 import './PropertiesPanel.css';
 
@@ -213,11 +214,22 @@ const ImageProperties: React.FC<{ element: ImageElement }> = ({ element }) => {
     updateElement(element.id, updates);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file);
-      handleUpdate({ src: url });
+      try {
+        const result = await imageService.uploadImage(file);
+        handleUpdate({ src: result.imageUrl });
+
+        if (result.error) {
+          console.warn('Image upload warning:', result.error);
+        }
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+        // Fallback to local blob URL
+        const url = URL.createObjectURL(file);
+        handleUpdate({ src: url });
+      }
     }
     event.target.value = '';
   };

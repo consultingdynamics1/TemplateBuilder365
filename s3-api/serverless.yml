@@ -74,3 +74,34 @@ functions:
           authorizer:
             name: cognitoAuthorizer
 
+  # Image management endpoints (Stage/Production only - Dev uses blob URLs)
+  uploadImage:
+    handler: handler.uploadImage
+    timeout: 30  # Longer timeout for file uploads
+    events:
+      - httpApi:
+          path: /api/projects/{projectName}/images/upload
+          method: post
+          authorizer:
+            name: cognitoAuthorizer
+
+  listImages:
+    handler: handler.listImages
+    timeout: 10
+    events:
+      - httpApi:
+          path: /api/projects/{projectName}/images/list
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+
+  deleteImage:
+    handler: handler.deleteImage
+    timeout: 10
+    events:
+      - httpApi:
+          path: /api/projects/{projectName}/images/{imageName}
+          method: delete
+          authorizer:
+            name: cognitoAuthorizer
+
