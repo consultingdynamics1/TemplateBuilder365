@@ -8,7 +8,7 @@ provider:
   region: us-east-1
   stage: stage
   deploymentBucket:
-    name: templatebuilder365-user-data
+    name: tb365-serverless-deployments-stage
   environment:
     STAGE: ${self:provider.stage}
     NODE_ENV: ${self:provider.stage}

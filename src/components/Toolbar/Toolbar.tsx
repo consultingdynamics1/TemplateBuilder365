@@ -222,7 +222,7 @@ export const Toolbar: React.FC = () => {
       // Call our conversion API (for development, we'll use the local mock server)
       const converterEndpoint = isDevelopment()
         ? 'http://localhost:3001/convert'
-        : `${CONFIG.API_ENDPOINT}/convert`;
+        : `${CONFIG.CONVERTER_ENDPOINT}/convert`;
 
       // Prepare headers - skip authentication in development mode
       const headers: Record<string, string> = {

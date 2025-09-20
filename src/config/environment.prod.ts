@@ -7,6 +7,7 @@ export const CONFIG: ConfigInterface = {
   COGNITO_USER_POOL_ID: 'us-east-1_RIOPGg1Cq',
   COGNITO_CLIENT_ID: '2addji24p0obg5sqedgise13i4',
   API_ENDPOINT: 'https://api.templatebuilder365.com',
+  CONVERTER_ENDPOINT: 'https://api.templatebuilder365.com',
   ENABLE_AUTH: 'true',
   COGNITO_DOMAIN: 'us-east-1riopgg1cq.auth.us-east-1.amazoncognito.com'
 };
