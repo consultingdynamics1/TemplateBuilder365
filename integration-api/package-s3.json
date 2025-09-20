@@ -1,0 +1,9 @@
+{
+  "name": "tb365-s3-functions",
+  "version": "1.0.0",
+  "description": "Lightweight S3 project management functions",
+  "main": "functions/s3-projects.js",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0"
+  }
+}

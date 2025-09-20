@@ -93,7 +93,7 @@ export async function saveProjectFile(
     console.log(`☁️ Saving to cloud via API: project=${projectName}, env=${CONFIG.ENVIRONMENT}`);
 
     const result = await saveProjectToAPI(projectName, canvasState);
-    console.log(`✅ Cloud save successful: ${result.message} (version ${result.version})`);
+    console.log(`✅ Cloud save successful: ${result.message}`);
     return projectName;
   } catch (error) {
     console.error('❌ Cloud save failed, falling back to local save:', error);
@@ -275,10 +275,10 @@ async function loadProjectFromCloud(projectName: string): Promise<ProjectFile> {
 
     // Transform API response to ProjectFile format
     const projectFile: ProjectFile = {
-      projectName: result.projectName,
-      savedAt: result.savedAt,
-      version: result.version,
-      canvasState: result.canvasState
+      projectName: result.projectData.projectName,
+      savedAt: result.projectData.savedAt,
+      version: result.projectData.version,
+      canvasState: result.projectData.canvasState
     };
 
     console.log(`✅ Cloud load successful: ${projectFile.projectName} (version ${projectFile.version})`);

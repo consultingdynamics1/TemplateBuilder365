@@ -1,5 +1,67 @@
 # TemplateBuilder365 Implementation Log
 
+## 2025-09-20: S3 Cloud Storage Integration Complete
+
+### Problem Statement
+Template and image storage was limited to local browser downloads with no cloud persistence, no user isolation, and broken image references after browser restarts.
+
+### Solution: Complete AWS S3 Integration
+
+#### ✅ S3 Project Management (COMPLETED)
+**Infrastructure:**
+- Deployed separate S3-only Lambda stack: `tb365-s3-api-stage`
+- API endpoints: `https://keipbp2fel.execute-api.us-east-1.amazonaws.com`
+- Cognito JWT authentication required for all operations
+- User isolation: `stage/{user-id}/projects/{project-name}/`
+
+**Endpoints:**
+- `POST /api/projects/save` - Save projects to S3 with versioning
+- `GET /api/projects/list` - List user's projects
+- `GET /api/projects/load/{projectName}` - Load specific project
+- `DELETE /api/projects/delete/{projectName}` - Delete project
+
+**Frontend Integration:**
+- Environment-aware API client with JWT token handling
+- Automatic fallback to local storage if cloud save fails
+- Stage deployment: `https://de1ztc46ci2dy.cloudfront.net/`
+- CloudFront HTTPS enables crypto.subtle for PKCE authentication
+
+**S3 Structure:**
+```
+s3://templatebuilder365-user-data/
+└── stage/
+    └── {user-id}/           # Cognito sub ID
+        └── projects/
+            └── {project-name}/
+                └── v1/
+                    └── template.tb365
+```
+
+#### ⏳ S3 Image Storage (IN PROGRESS)
+**Current Issue:** Images stored as browser blob URLs, not persisted to cloud
+**Next Phase:** Replace blob URLs with S3 image uploads under project level
+
+**Planned Structure:**
+```
+stage/{user-id}/projects/{project-name}/
+├── images/                  # Shared across versions (no image versioning)
+│   ├── house-photo.jpg     # Permanent S3 URLs
+│   └── logo.png
+└── v1/template.tb365       # References S3 image URLs
+```
+
+**Implementation Strategy:**
+- No image versioning (avoid duplicates)
+- Replace warning when user uploads new image with same name
+- Project-level image organization for logical grouping
+
+### Technical Achievements
+- **Authentication**: Full Cognito JWT integration working
+- **User Isolation**: Projects scoped to authenticated user ID
+- **Environment Separation**: Dev/stage/production data isolation
+- **Error Handling**: Graceful fallback to local storage
+- **Cache Management**: CloudFront invalidation for deployment updates
+
 ## 2025-09-18: Shared TB365 Conversion Library & HTML Export Fixes
 
 ### Problem Statement

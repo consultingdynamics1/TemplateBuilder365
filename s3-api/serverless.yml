@@ -1,0 +1,76 @@
+service: tb365-s3-api
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: stage
+  deploymentBucket:
+    name: tb365-serverless-deployments-stage
+  httpApi:
+    cors: true
+    authorizers:
+      cognitoAuthorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_RIOPGg1Cq
+        audience:
+          - 2addji24p0obg5sqedgise13i4
+
+  environment:
+    S3_BUCKET: templatebuilder365-user-data
+    COGNITO_USER_POOL_ID: us-east-1_RIOPGg1Cq
+    COGNITO_CLIENT_ID: 2addji24p0obg5sqedgise13i4
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:DeleteObject
+        - s3:ListBucket
+      Resource:
+        - arn:aws:s3:::templatebuilder365-user-data
+        - arn:aws:s3:::templatebuilder365-user-data/*
+
+functions:
+  saveProject:
+    handler: handler.saveProject
+    timeout: 10
+    events:
+      - httpApi:
+          path: /api/projects/save
+          method: post
+          authorizer:
+            name: cognitoAuthorizer
+
+  listProjects:
+    handler: handler.listProjects
+    timeout: 10
+    events:
+      - httpApi:
+          path: /api/projects/list
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+
+  loadProject:
+    handler: handler.loadProject
+    timeout: 10
+    events:
+      - httpApi:
+          path: /api/projects/load/{projectName}
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+
+  deleteProject:
+    handler: handler.deleteProject
+    timeout: 10
+    events:
+      - httpApi:
+          path: /api/projects/delete/{projectName}
+          method: delete
+          authorizer:
+            name: cognitoAuthorizer
+

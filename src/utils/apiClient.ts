@@ -3,30 +3,29 @@ import { CONFIG } from '../config/environment';
 // Removed unused ApiResponse interface
 
 interface ProjectSaveResponse {
+  success: boolean;
   message: string;
   projectName: string;
-  version: string;
-  savedAt: string;
-  userId: string;
+  s3Key: string;
 }
 
 interface ProjectListResponse {
+  success: boolean;
   projects: Array<{
     name: string;
-    lastModified: string;
-    version: string;
-    size?: number;
+    lastModified: string | null;
+    path: string;
   }>;
-  userId: string;
-  count: number;
 }
 
 interface ProjectLoadResponse {
-  projectName: string;
-  canvasState: any;
-  version: string;
-  savedAt: string;
-  userId: string;
+  success: boolean;
+  projectData: {
+    projectName: string;
+    savedAt: string;
+    version: string;
+    canvasState: any;
+  };
 }
 
 /**
@@ -35,11 +34,13 @@ interface ProjectLoadResponse {
 function getAuthToken(): string | null {
   // In development mode, we don't need auth
   if ((CONFIG.ENVIRONMENT as string) === 'dev' || (CONFIG.ENVIRONMENT as string) === 'development') {
+    console.log('🛠️ API Client: Using mock token for development mode');
     return 'mock-jwt-token';
   }
 
   // Get the access token from localStorage
-  const accessToken = localStorage.getItem('tb365_access_token');
+  const accessToken = localStorage.getItem('tb365_token');
+  console.log(`🔑 API Client: Environment=${CONFIG.ENVIRONMENT}, Token found=${!!accessToken}, Token preview=${accessToken?.substring(0, 20)}...`);
   return accessToken;
 }
 
@@ -121,10 +122,10 @@ export async function listProjectsFromAPI(): Promise<ProjectListResponse> {
 /**
  * Delete project from cloud storage via Lambda API
  */
-export async function deleteProjectFromAPI(projectName: string): Promise<{ message: string; projectName: string; userId: string }> {
-  console.log(`🌐 API Delete: ${projectName} from ${CONFIG.API_ENDPOINT}/api/projects/${encodeURIComponent(projectName)}`);
+export async function deleteProjectFromAPI(projectName: string): Promise<{ success: boolean; message: string; projectName: string }> {
+  console.log(`🌐 API Delete: ${projectName} from ${CONFIG.API_ENDPOINT}/api/projects/delete/${encodeURIComponent(projectName)}`);
 
-  const response = await apiRequest<{ message: string; projectName: string; userId: string }>(`/api/projects/${encodeURIComponent(projectName)}`, {
+  const response = await apiRequest<{ success: boolean; message: string; projectName: string }>(`/api/projects/delete/${encodeURIComponent(projectName)}`, {
     method: 'DELETE'
   });
 
