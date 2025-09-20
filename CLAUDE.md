@@ -22,6 +22,7 @@ TemplateBuilder365 is a React-based visual template builder with cloud storage, 
 - ✅ **S3 Cloud Storage**: User projects stored with versioning and cleanup
 - ✅ **Authentication**: AWS Cognito JWT with development bypass
 - ✅ **Load/Save Cycle**: Complete cloud storage integration with version retention
+- ✅ **HTML Converter**: Stage deployment active at Lambda endpoint
 - ✅ **Configuration System**: Environment-aware variable replacement
 - ✅ **Deployment Pipeline**: Stage deployment active at CloudFront HTTPS
 
