@@ -89,11 +89,28 @@ async createImageUrlForEnvironment(file: File): Promise<string> {
 - **Port Management**: Automated cleanup and startup scripts
 - **Canvas Size**: A4 default (794×1123px) for professional documents
 
-### 🔄 Next Session Priorities
-1. **S3 Cloud Storage Integration**: Implement secure browser-compatible S3 operations
-2. **API Gateway + Lambda Proxy**: Route S3 operations through serverless functions
-3. **Stage Environment Testing**: Full authentication + cloud storage workflow
-4. **Production Deployment**: Complete environment promotion pipeline
+### 🔄 Next Session Priorities (Updated 2025-09-23 End-of-Session)
+**Primary Goal**: Clean stage deployment pipeline and comprehensive cloud/local file handling
+
+1. **Stage Deployment Pipeline Cleanup**
+   - Ensure stage deployment doesn't impact dev pipeline
+   - Clean separation between development and stage environments
+   - Verify stage build process and deployment integrity
+
+2. **Dual File Storage Testing (Stage Environment)**
+   - **Local File Mode**: Base64 embedded images for desktop downloads
+   - **Cloud File Mode**: S3 storage with separate image folder structure
+   - **Transition Testing**: Local file with Base64 → Cloud storage with S3 images
+
+3. **Image Handling Strategy Implementation**
+   - **Local Save**: Maintain Base64 embedding for portable files
+   - **Cloud Save**: Extract Base64 images → Upload to S3 images folder → Update element references
+   - **Load Testing**: Cloud projects with S3 image references → Local fallback handling
+
+4. **Cross-Environment Workflow Testing**
+   - Stage authentication + cloud storage integration
+   - Local file import to cloud storage conversion
+   - Stage environment end-to-end validation
 
 ### 💡 Key Decisions Made
 - **Development Strategy**: Pure local with Base64 images (no cloud complexity)
