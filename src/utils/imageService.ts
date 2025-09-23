@@ -99,18 +99,17 @@ class ImageService {
   }
 
   /**
-   * Upload an image file to S3 project folder
-   * Used during save operation to upload blob images to final location
-   * Dev: Still creates blob URL (no S3 dependency)
-   * Stage/Prod: Uploads directly to project folder in S3
+   * Upload an image file for project use
+   * Dev: Convert to Base64 data URL for embedded storage
+   * Stage/Prod: Upload directly to S3 project folder
    */
   async uploadImageToProject(file: File, projectName: string): Promise<UploadImageResult> {
     if (isDevelopment()) {
-      // Development mode: Use blob URLs (no S3 dependency)
-      const imageUrl = URL.createObjectURL(file);
+      // Development mode: Convert to Base64 for portable templates
+      const base64Url = await this.convertFileToBase64(file);
       return {
         success: true,
-        imageUrl,
+        imageUrl: base64Url,
         filename: file.name,
         existed: false
       };
@@ -149,7 +148,8 @@ class ImageService {
 
   /**
    * Create a blob URL for immediate use with validation
-   * All new images start as blob URLs until save
+   * Dev: Create blob URL (will be converted to Base64 on add)
+   * Stage/Prod: Create blob URL until save
    * Throws error if file is invalid to prevent crashes
    */
   createBlobUrl(file: File): string {
@@ -160,6 +160,26 @@ class ImageService {
     }
 
     return URL.createObjectURL(file);
+  }
+
+  /**
+   * Create image URL for development mode (Base64) or stage/prod (blob URL)
+   * This ensures consistent behavior across environments
+   */
+  async createImageUrlForEnvironment(file: File): Promise<string> {
+    // Validate basic file properties (type, size)
+    const validation = this.validateImageFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    if (isDevelopment()) {
+      // Development: Convert to Base64 immediately for portable storage
+      return await this.convertFileToBase64(file);
+    } else {
+      // Stage/Production: Use blob URL until save
+      return URL.createObjectURL(file);
+    }
   }
 
   /**
@@ -271,6 +291,36 @@ class ImageService {
    */
   isS3Url(url: string): boolean {
     return url.includes('s3.') && url.includes('amazonaws.com');
+  }
+
+  /**
+   * Check if an image URL is a Base64 data URL (embedded)
+   */
+  isBase64Url(url: string): boolean {
+    return url.startsWith('data:image/');
+  }
+
+  /**
+   * Convert file to Base64 data URL for development mode
+   * Creates portable images that can be embedded in templates
+   */
+  private async convertFileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        console.log(`📷 Converted ${file.name} to Base64 (${Math.round(base64String.length / 1024)}KB)`);
+        resolve(base64String);
+      };
+
+      reader.onerror = () => {
+        console.error(`❌ Failed to convert ${file.name} to Base64`);
+        reject(new Error('Failed to convert image to Base64'));
+      };
+
+      reader.readAsDataURL(file);
+    });
   }
 }
 

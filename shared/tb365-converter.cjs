@@ -53,6 +53,11 @@ function parseTB365(tb365Data) {
         height: element.height
       }));
     }
+
+    // Debug: Log image elements specifically to see src values
+    if (element.type === 'image') {
+      console.log(`🔍 CONVERTER DEBUG: Image element ${element.id} - src: "${element.src ? element.src.substring(0, 50) + '...' : 'Empty'}"`);
+    }
     const normalized = {
       id: element.id || `element-${index}`,
       type: element.type,

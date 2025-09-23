@@ -218,9 +218,9 @@ const ImageProperties: React.FC<{ element: ImageElement }> = ({ element }) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       try {
-        // Always use blob URL - upload happens during save
-        const blobUrl = imageService.createBlobUrl(file);
-        handleUpdate({ src: blobUrl });
+        // Environment-aware image URL creation
+        const imageUrl = await imageService.createImageUrlForEnvironment(file);
+        handleUpdate({ src: imageUrl });
       } catch (error) {
         console.error('Image validation failed:', error);
         alert(`Image upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

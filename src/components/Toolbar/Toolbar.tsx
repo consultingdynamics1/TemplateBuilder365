@@ -141,7 +141,10 @@ export const Toolbar: React.FC = () => {
   };
 
   const handleLoadProject = () => {
-    if (storageMode === 'cloud') {
+    // In development mode, always use local file picker (no cloud storage)
+    if (isDevelopment()) {
+      fileInputRef.current?.click();
+    } else if (storageMode === 'cloud') {
       setShowLoadDialog(true);
     } else {
       fileInputRef.current?.click();
@@ -209,15 +212,42 @@ export const Toolbar: React.FC = () => {
     setExportStatus('Converting to HTML...');
 
     try {
-      // Prepare TB365 data format
+      // Prepare canvas state - process blob images to Base64 if in development
+      let processedCanvasState = { elements, canvasSize };
+
+      console.log('🔍 HTML EXPORT DEBUG: Starting HTML export workflow');
+      console.log('🔍 HTML EXPORT DEBUG: isDevelopment():', isDevelopment());
+      console.log('🔍 HTML EXPORT DEBUG: Initial canvas state elements:', elements.length);
+
+      // Debug initial image elements state
+      const initialImageElements = elements.filter(element => element.type === 'image');
+      console.log('🔍 HTML EXPORT DEBUG: Initial image elements:', initialImageElements.length);
+      initialImageElements.forEach((img, index) => {
+        console.log(`🔍 HTML EXPORT DEBUG: Initial Image ${index + 1} - ID: ${img.id}, src: "${img.src}"`);
+      });
+
+      if (isDevelopment()) {
+        // Development mode: Images are already Base64, no processing needed
+        setExportStatus('Images ready for export...');
+      }
+
+      // Prepare TB365 data format with processed images
       const tb365Data = {
         projectName: currentDocumentName || 'Untitled Template',
         version: '1.0',
-        canvasState: {
-          elements: elements,
-          canvasSize: canvasSize
-        }
+        canvasState: processedCanvasState
       };
+
+      console.log('🔍 HTML EXPORT DEBUG: Final TB365 data being sent to converter:');
+      console.log('🔍 HTML EXPORT DEBUG: Project:', tb365Data.projectName);
+      console.log('🔍 HTML EXPORT DEBUG: Canvas elements:', tb365Data.canvasState.elements.length);
+
+      // Debug final image URLs being sent
+      const finalImageElements = tb365Data.canvasState.elements.filter(element => element.type === 'image');
+      console.log('🔍 HTML EXPORT DEBUG: Final images being sent to converter:', finalImageElements.length);
+      finalImageElements.forEach((img, index) => {
+        console.log(`🔍 HTML EXPORT DEBUG: Final Image ${index + 1} - ID: ${img.id}, src: "${img.src ? img.src.substring(0, 50) + '...' : 'Empty'}"`);
+      });
 
       // Call our conversion API (for development, we'll use the local mock server)
       const converterEndpoint = isDevelopment()
@@ -415,22 +445,25 @@ export const Toolbar: React.FC = () => {
           )}
         </div>
 
-        {/* Storage Mode Toggle - right after save/load operations */}
-        <div className="tool-group storage-mode">
-          <button
-            className={`storage-toggle-button ${storageMode === 'cloud' ? 'cloud-mode' : 'local-mode'}`}
-            onClick={() => setStorageMode(storageMode === 'cloud' ? 'local' : 'cloud')}
-            title={storageMode === 'cloud' ? 'Switch to Local Storage' : 'Switch to Cloud Storage'}
-            type="button"
-          >
-            <span className="storage-icon">
-              {storageMode === 'cloud' ? '⬆️' : '⬇️'}
+        {/* Storage Mode Toggle - hidden in development */}
+        {!isDevelopment() && (
+          <div className="tool-group storage-mode">
+            <button
+              className={`storage-toggle-button ${storageMode === 'cloud' ? 'cloud-mode' : 'local-mode'}`}
+              onClick={() => setStorageMode(storageMode === 'cloud' ? 'local' : 'cloud')}
+              title={storageMode === 'cloud' ? 'Switch to Local Storage' : 'Switch to Cloud Storage'}
+              type="button"
+            >
+              <span className="storage-icon">
+                {storageMode === 'cloud' ? '⬆️' : '⬇️'}
+              </span>
+            </button>
+            <span className="storage-label">
+              {storageMode === 'cloud' ? 'Cloud Storage' : 'Local Files'}
             </span>
-          </button>
-          <span className="storage-label">
-            {storageMode === 'cloud' ? 'Cloud Storage' : 'Local Files'}
-          </span>
-        </div>
+          </div>
+        )}
+
       </div>
 
       {/* Export Section */}

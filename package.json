@@ -4,12 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run build:dev && vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy:stage": "npm run build && aws s3 sync dist/ s3://tb365-frontend-stage/ --delete",
-    "deploy:prod": "npm run build && aws s3 sync dist/ s3://tb365-frontend-prod/ --delete"
+    "deploy:prod": "npm run build && aws s3 sync dist/ s3://tb365-frontend-prod/ --delete",
+    "build:dev": "node scripts/replace-variables.js development",
+    "build:stage": "node scripts/replace-variables.js stage",
+    "build:prod": "node scripts/replace-variables.js production",
+    "restore": "node scripts/restore-templates.js",
+    "clean": "node scripts/cleanup-ports.cjs",
+    "start": "node scripts/dev-start.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.890.0",

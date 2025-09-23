@@ -16,7 +16,7 @@ export const CONFIG: ConfigInterface = {
   AWS_REGION: 'us-east-1',
   COGNITO_USER_POOL_ID: 'mock-user-pool',
   COGNITO_CLIENT_ID: 'mock-client-id',
-  API_ENDPOINT: 'https://jczxdnaz4m.execute-api.us-east-1.amazonaws.com/stage',
+  API_ENDPOINT: 'http://localhost:3000',
   CONVERTER_ENDPOINT: 'http://localhost:3001',
   ENABLE_AUTH: 'false',
   COGNITO_DOMAIN: 'mock.auth.us-east-1.amazoncognito.com'

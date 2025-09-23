@@ -125,15 +125,15 @@ export const Canvas: React.FC = () => {
           // Create image element from dropped file with environment-aware upload
           addElement('image', actualPos);
 
-          // Update the element with blob URL (deferred upload until save)
-          setTimeout(() => {
+          // Update the element with environment-aware image URL
+          setTimeout(async () => {
             const { elements, updateElement } = useCanvasStore.getState();
             const latestElement = elements[elements.length - 1];
             if (latestElement && latestElement.type === 'image') {
               try {
-                // Always use blob URL - upload happens during save
-                const blobUrl = imageService.createBlobUrl(imageFile);
-                updateElement(latestElement.id, { src: blobUrl });
+                // Environment-aware image URL creation
+                const imageUrl = await imageService.createImageUrlForEnvironment(imageFile);
+                updateElement(latestElement.id, { src: imageUrl });
               } catch (error) {
                 console.error('Image validation failed:', error);
                 alert(`Image upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -157,14 +157,14 @@ export const Canvas: React.FC = () => {
       addElement('image', position);
 
       // Get the element that was just created and update it with blob URL
-      setTimeout(() => {
+      setTimeout(async () => {
         const { elements, updateElement } = useCanvasStore.getState();
         const latestElement = elements[elements.length - 1];
         if (latestElement && latestElement.type === 'image') {
           try {
-            // Always use blob URL - upload happens during save
-            const blobUrl = imageService.createBlobUrl(file);
-            updateElement(latestElement.id, { src: blobUrl });
+            // Environment-aware image URL creation
+            const imageUrl = await imageService.createImageUrlForEnvironment(file);
+            updateElement(latestElement.id, { src: imageUrl });
           } catch (error) {
             console.error('Image validation failed:', error);
             alert(`Image upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

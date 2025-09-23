@@ -72,13 +72,14 @@ export function createProjectFile(
 
 /**
  * Smart image upload: Convert blob URLs to S3 URLs during save
- * Only uploads images that are still blob URLs (new images)
+ * Dev: Skip processing (images already converted to Base64)
+ * Stage/Prod: Only uploads images that are still blob URLs (new images)
  */
-async function processImageUploads(
+export async function processImageUploads(
   projectName: string,
   canvasState: CanvasState
 ): Promise<CanvasState> {
-  // Skip image processing in development mode
+  // Development mode: Images are already Base64, no processing needed
   if (isDevelopment()) {
     return canvasState;
   }
@@ -137,6 +138,86 @@ async function processImageUploads(
 }
 
 /**
+ * Development mode: Convert blob URLs to Base64 data URLs for portable files
+ */
+async function processImageUploadsForDev(canvasState: CanvasState): Promise<CanvasState> {
+  console.log('🔍 DEV DEBUG: processImageUploadsForDev called');
+  console.log('🔍 DEV DEBUG: Total elements:', canvasState.elements.length);
+
+  // Debug all image elements
+  const allImageElements = canvasState.elements.filter(element => element.type === 'image');
+  console.log('🔍 DEV DEBUG: All image elements found:', allImageElements.length);
+
+  allImageElements.forEach((element, index) => {
+    console.log(`🔍 DEV DEBUG: Image ${index + 1} - ID: ${element.id}, src: "${element.src}", isBlobUrl: ${element.src ? imageService.isBlobUrl(element.src) : 'N/A'}`);
+  });
+
+  // Find all image elements with blob URLs
+  const imageElements = canvasState.elements.filter(
+    element => element.type === 'image' &&
+    element.src &&
+    imageService.isBlobUrl(element.src)
+  );
+
+  console.log('🔍 DEV DEBUG: Blob URL image elements found:', imageElements.length);
+
+  if (imageElements.length === 0) {
+    console.log('📷 No blob images to convert');
+    return canvasState;
+  }
+
+  console.log(`📷 Converting ${imageElements.length} blob images to Base64 for dev storage`);
+
+  // Process each blob image and convert to Base64
+  const updatedElements = await Promise.all(
+    canvasState.elements.map(async (element, index) => {
+      console.log(`🔍 DEV DEBUG: Processing element ${index + 1}/${canvasState.elements.length} - type: ${element.type}, id: ${element.id}`);
+
+      if (element.type === 'image') {
+        console.log(`🔍 DEV DEBUG: Image element ${element.id} - src: "${element.src}", hasSource: ${!!element.src}, isBlobUrl: ${element.src ? imageService.isBlobUrl(element.src) : 'N/A'}`);
+
+        if (element.src && imageService.isBlobUrl(element.src)) {
+          console.log(`🔄 DEV DEBUG: Converting blob URL to Base64 for image ${element.id}`);
+          try {
+            // Convert blob URL back to File for Base64 conversion
+            const file = await imageService.blobToFile(element.src, `image-${element.id}.jpg`);
+            console.log(`🔍 DEV DEBUG: Created file for ${element.id} - size: ${file.size} bytes, type: ${file.type}`);
+
+            // Convert File to Base64 data URL
+            const base64Url = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = () => reject(new Error('Failed to convert to Base64'));
+              reader.readAsDataURL(file);
+            });
+
+            console.log(`✅ Converted blob image to Base64: ${element.id} (${Math.round(base64Url.length / 1024)}KB)`);
+
+            // Clean up the blob URL
+            imageService.revokeImageUrl(element.src);
+
+            // Return element with Base64 URL
+            return { ...element, src: base64Url };
+          } catch (error) {
+            console.error(`❌ Error converting blob image ${element.id}:`, error);
+            return element; // Keep blob URL as fallback
+          }
+        } else {
+          console.log(`🔍 DEV DEBUG: Image ${element.id} skipped - not a blob URL`);
+        }
+      }
+      return element; // Non-image or already Base64/other URL
+    })
+  );
+
+  // Return updated canvas state with Base64 URLs
+  return {
+    ...canvasState,
+    elements: updatedElements
+  };
+}
+
+/**
  * Save project file with storage mode-aware routing
  */
 export async function saveProjectFile(
@@ -144,10 +225,20 @@ export async function saveProjectFile(
   canvasState: CanvasState,
   storageMode?: StorageMode
 ): Promise<string> {
-  // Use storage mode from parameter or fall back to environment-based logic
-  // If API_ENDPOINT points to AWS, use cloud storage even in development
+  // Development always uses local storage with Base64 images
+  if (isDevelopment()) {
+    console.log(`💾 Dev mode: Processing images and forcing local save with Base64`);
+
+    // Step 1: Convert any blob URLs to Base64 first
+    const processedCanvasState = await processImageUploads(projectName, canvasState);
+
+    // Step 2: Save with Base64 embedded images
+    return await saveProjectFileLocal(projectName, processedCanvasState);
+  }
+
+  // Stage/Prod: Use storage mode from parameter or fall back to environment-based logic
   const useCloudStorage = storageMode === 'cloud' ||
-    (!storageMode && (CONFIG.API_ENDPOINT.includes('amazonaws.com') || !isDevelopment()));
+    (!storageMode && CONFIG.API_ENDPOINT.includes('amazonaws.com'));
 
   // Local storage mode: Use "Save As" dialog
   if (!useCloudStorage) {
