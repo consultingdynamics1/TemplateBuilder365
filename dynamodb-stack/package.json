@@ -1,0 +1,27 @@
+{
+  "name": "templatebuilder365-dynamodb-stack",
+  "version": "1.0.0",
+  "description": "Dedicated DynamoDB stack for TemplateBuilder365 unified data storage",
+  "scripts": {
+    "deploy": "serverless deploy",
+    "deploy:stage": "serverless deploy --stage stage",
+    "deploy:prod": "serverless deploy --stage prod",
+    "remove": "serverless remove",
+    "remove:stage": "serverless remove --stage stage",
+    "remove:prod": "serverless remove --stage prod",
+    "info": "serverless info",
+    "print": "serverless print"
+  },
+  "devDependencies": {
+    "serverless": "^4.4.3"
+  },
+  "keywords": [
+    "dynamodb",
+    "templatebuilder365",
+    "database",
+    "serverless",
+    "aws"
+  ],
+  "author": "TemplateBuilder365",
+  "license": "MIT"
+}
