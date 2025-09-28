@@ -380,6 +380,350 @@ package:
 
 ---
 
+## Session: 2025-09-28
+
+### 🎯 Session Objectives
+- **Image Library Backend Design**: Create searchable image management system with S3 + DynamoDB
+- **Test User Authentication**: Verify brunipeter94@gmail.com credentials for backend testing
+- **Backoffice Management System**: Design admin tools for quota management and operations
+- **Production Considerations**: Storage quotas, optimization, validation, cleanup strategies
+
+### 🔧 Technical Implementation Planning
+
+#### 1. Test User Authentication Verification
+**Problem**: Need working JWT credentials for backend API testing
+**Solution**: Created authentication test scripts and verified Cognito setup
+**Test User**: `brunipeter94@gmail.com` / `Test123!`
+
+**Files Created**:
+- `test-user-auth.js` - Node.js authentication test script
+- `test-auth-stage.html` - Browser-based OAuth PKCE test
+- `verify-credentials.js` - Cognito configuration verification
+
+**Verification Results**:
+✅ User Pool Client properly configured (`us-east-1_RIOPGg1Cq`)
+✅ Auth flows enabled (ALLOW_USER_SRP_AUTH for OAuth)
+✅ Callback URLs include stage environment
+✅ Ready for stage environment testing at https://de1ztc46ci2dy.cloudfront.net/
+
+#### 2. Image Library Architecture Design
+**Problem**: Current system uses Base64 embedded images causing file bloat and no image reuse
+**Solution**: Shared image library with S3 storage + DynamoDB metadata + searchable tags
+
+**Proposed S3 Structure**:
+```
+templatebuilder365-user-data/
+└── stage/
+    └── {user-id}/
+        ├── images/                    # ← NEW: Shared image library
+        │   ├── img_abc123.png         # Unique image IDs
+        │   ├── img_def456.jpg
+        │   └── img_ghi789.svg
+        ├── projects/
+        │   ├── real-estate-flyer/
+        │   │   └── v8/
+        │   │       └── template.tb365  # References: images/img_abc123.png
+        │   └── business-card/
+        │       └── v3/
+        │           └── template.tb365  # References: images/img_abc123.png
+        └── exports/
+```
+
+**Benefits**:
+- **Deduplication**: One image shared across multiple projects
+- **Smaller Project Files**: TB365 files contain references, not Base64 data
+- **Performance**: Faster saves/loads, parallel image loading
+- **User Experience**: Reusable asset library with search capabilities
+
+#### 3. Unified DynamoDB Schema Design
+**Problem**: Need scalable schema supporting image library + future user profiles + metrics
+**Solution**: Single table design with composite keys for multiple entity types
+
+**DynamoDB Table**: `TemplateBuilder365_Data`
+
+```typescript
+// USER PROFILES (Future Phase 2)
+{
+  PK: "USER#user123",
+  SK: "PROFILE",
+  entityType: "UserProfile",
+  cognitoSub: "user123",
+  email: "brunipeter94@gmail.com",
+  firstName: "Bruno",
+  lastName: "Peter",
+  subscription: "free", // free, pro, enterprise
+  quotas: {
+    maxImages: 100,
+    maxStorageMB: 100
+  }
+}
+
+// USER METRICS (Future Phase 3)
+{
+  PK: "USER#user123",
+  SK: "METRICS#2025-09-28",
+  entityType: "UserMetrics",
+  date: "2025-09-28",
+  projectsCreated: 2,
+  imagesUploaded: 3,
+  totalEditTimeMinutes: 45
+}
+
+// IMAGES (Phase 1 - Current Focus)
+{
+  PK: "USER#user123",
+  SK: "IMAGE#img_abc123",
+  entityType: "ImageMetadata",
+  imageId: "img_abc123",
+  filename: "company-logo.png",
+  originalName: "My Company Logo.png",
+  contentType: "image/png",
+  size: 45231,
+  checksum: "sha256:abc123...",
+  s3Key: "stage/user123/images/img_abc123.png",
+  uploadedAt: "2025-09-28T10:30:00Z",
+  tags: {
+    predefined: {
+      type: ["logo"],
+      purpose: ["branding"],
+      style: ["professional"]
+    },
+    custom: ["acme-corp", "primary-logo"],
+    searchableText: "logo branding professional acme-corp primary-logo"
+  },
+  metadata: {
+    width: 200,
+    height: 100,
+    format: "PNG"
+  },
+  usage: {
+    projectCount: 3,
+    projectIds: ["proj_123", "proj_456"],
+    lastUsed: "2025-09-28T15:45:00Z",
+    isOrphaned: false
+  }
+}
+
+// PROJECTS (Enhanced metadata for cleanup)
+{
+  PK: "USER#user123",
+  SK: "PROJECT#proj_def456",
+  entityType: "ProjectMetadata",
+  projectId: "proj_def456",
+  projectName: "Real Estate Flyer",
+  s3Key: "stage/user123/projects/real-estate-flyer/current.json",
+  imagesUsed: ["img_abc123", "img_def789"], // For cleanup tracking
+  tags: ["real-estate", "marketing"]
+}
+```
+
+**GSI Indexes for Search**:
+```typescript
+// GSI1: Search images by tags
+GSI1PK: "IMAGE_TAG#{tag}"     // e.g., "IMAGE_TAG#logo"
+GSI1SK: "USER#{userId}#IMAGE#{imageId}"
+
+// GSI2: Search projects by tags
+GSI2PK: "PROJECT_TAG#{tag}"   // e.g., "PROJECT_TAG#real-estate"
+GSI2SK: "USER#{userId}#PROJECT#{projectId}"
+```
+
+#### 4. Image Library API Design
+**API Endpoints**:
+```typescript
+POST   /api/v1/images/upload         // Upload + metadata generation
+GET    /api/v1/images               // List user's images (paginated)
+GET    /api/v1/images/search        // Search by tags, filename, etc.
+GET    /api/v1/images/{id}          // Get specific image metadata
+PUT    /api/v1/images/{id}/tags     // Update image tags
+DELETE /api/v1/images/{id}          // Delete image + metadata
+```
+
+**Predefined Tag Categories**:
+```typescript
+const CORE_TAG_CATEGORIES = {
+  type: ["logo", "photo", "icon", "background", "illustration"],
+  purpose: ["branding", "marketing", "decoration", "content"],
+  style: ["professional", "casual", "modern", "minimalist"],
+  color: ["red", "blue", "green", "yellow", "black", "white", "multicolor"],
+  orientation: ["landscape", "portrait", "square"]
+};
+```
+
+#### 5. Production Considerations
+
+**Storage Quotas & Cost Control**:
+```typescript
+const STORAGE_QUOTAS = {
+  free: { maxImages: 50, maxStorageMB: 100, maxFileSizeMB: 5 },
+  pro: { maxImages: 500, maxStorageMB: 1000, maxFileSizeMB: 10 },
+  enterprise: { maxImages: 5000, maxStorageMB: 10000, maxFileSizeMB: 25 }
+};
+```
+
+**Image Optimization Pipeline**:
+- **Sharp.js integration** for automatic resize/compression
+- **WebP conversion** with JPEG fallback for browser compatibility
+- **Max dimensions**: 2048x2048 for canvas usage
+- **Quality settings**: WebP 80%, JPEG 85%
+
+**File Validation & Security**:
+- **MIME type validation** with magic byte verification
+- **Allowed formats**: JPEG, PNG, WebP, SVG, GIF
+- **File signature checking** to prevent spoofing
+- **Malicious content scanning**
+
+**Cleanup Strategy - Reference Counting**:
+```typescript
+// Smart orphan detection and cleanup
+- Track image usage in projects via reference counting
+- 7-day grace period for orphaned images
+- User notification before deletion
+- Recovery option through "trash" system
+```
+
+#### 6. Backoffice Management System Design
+**Problem**: Need operational tools to manage quotas, users, content, and system health
+**Solution**: Comprehensive admin dashboard with granular permissions
+
+**Enhanced DynamoDB Schema for Admin**:
+```typescript
+// ADMIN USERS
+{
+  PK: "ADMIN#admin123",
+  SK: "PROFILE",
+  entityType: "AdminProfile",
+  role: "super_admin", // super_admin, admin, support, viewer
+  permissions: ["user_management", "quota_adjustment", "billing"],
+  mfaEnabled: true
+}
+
+// QUOTA ADJUSTMENTS (Audit Trail)
+{
+  PK: "USER#user123",
+  SK: "QUOTA_CHANGE#2025-09-28T15:30:00Z",
+  entityType: "QuotaAdjustment",
+  adminId: "admin123",
+  previousQuota: { maxImages: 50, maxStorageMB: 100 },
+  newQuota: { maxImages: 100, maxStorageMB: 200 },
+  reason: "Customer support request #12345"
+}
+
+// CONTENT MODERATION
+{
+  PK: "USER#user123",
+  SK: "IMAGE_FLAG#img_abc123",
+  entityType: "ContentFlag",
+  flagType: "inappropriate_content",
+  severity: "medium",
+  status: "pending" // pending, reviewed, resolved, dismissed
+}
+
+// FEATURE FLAGS
+{
+  PK: "FEATURE_FLAGS",
+  SK: "FLAG#new_image_search",
+  entityType: "FeatureFlag",
+  enabled: true,
+  rolloutPercentage: 25
+}
+
+// SYSTEM METRICS
+{
+  PK: "SYSTEM_METRICS",
+  SK: "DAILY#2025-09-28",
+  entityType: "SystemMetrics",
+  totalUsers: 1250,
+  activeUsers: 890,
+  totalStorageGB: 89.5,
+  costUSD: 78.90
+}
+```
+
+**Backoffice API Endpoints**:
+```typescript
+// User Management
+GET    /admin/v1/users                // List all users
+PUT    /admin/v1/users/{id}/quota     // Adjust quotas
+POST   /admin/v1/users/{id}/suspend   // Suspend account
+
+// System Monitoring
+GET    /admin/v1/metrics/system       // Health dashboard
+GET    /admin/v1/metrics/costs        // Cost breakdown
+
+// Content Moderation
+GET    /admin/v1/moderation/flagged   // Review queue
+POST   /admin/v1/moderation/{id}/review // Resolve flags
+
+// Feature Management
+GET    /admin/v1/features             // Feature flags
+PUT    /admin/v1/features/{name}      // Update rollout
+```
+
+**Admin Authentication**:
+- **Separate Cognito App Client** for admin access
+- **Required MFA** for all admin accounts
+- **Permission-based access control** with granular roles
+- **4-hour session timeout** for security
+
+### 📊 Current Project State
+- **Authentication**: ✅ Test user verified, Cognito setup confirmed
+- **Architecture**: ✅ Unified DynamoDB schema designed for scalability
+- **Image Library**: ✅ Complete API design with production considerations
+- **Backoffice**: ✅ Comprehensive admin system architecture planned
+- **Next Phase**: Ready to implement Phase 1 (Image Library focus)
+
+### 🎯 Implementation Phases
+
+**Phase 1: Image Library (Current Session Focus)**
+- ✅ DynamoDB table creation with unified schema
+- ✅ Image upload/storage Lambda functions
+- ✅ Tag-based search and metadata management
+- ✅ JWT authentication integration
+- ✅ Test harness for validation
+
+**Phase 2: Enhanced User Profiles (Future)**
+- Enhanced registration with profile collection
+- User preferences and settings management
+- Subscription tier management
+- Frontend profile management UI
+
+**Phase 3: Analytics & Advanced Features (Future)**
+- User metrics collection and aggregation
+- Analytics dashboard for users
+- Advanced image features (AI tagging, etc.)
+- Performance optimizations
+
+**Phase 4: Backoffice Implementation (Future)**
+- Admin dashboard development
+- User management tools
+- Content moderation system
+- System monitoring and alerts
+
+### 🔧 Next Steps (If Session Continues)
+1. **Create DynamoDB table** with unified schema
+2. **Implement image upload Lambda** with optimization pipeline
+3. **Build image library API endpoints** with JWT authentication
+4. **Create test harness** using brunipeter94@gmail.com credentials
+5. **Test end-to-end workflow** from upload to search
+
+### 🔍 Technical Decisions Made
+1. **Single Table DynamoDB Design**: Cost-effective, scalable, future-ready
+2. **Reference-Based Images**: Shared library vs embedded Base64
+3. **Predefined + Custom Tags**: Structured search with flexibility
+4. **Production-First Approach**: Quotas, optimization, security built-in
+5. **Separate Admin System**: Complete operational control with audit trails
+6. **Phase 1 Focus**: Image library foundation before advanced features
+
+### 💡 Key Session Insights
+- **Operational Requirements**: Backoffice tools are critical for production success
+- **Schema Design**: Single table approach saves costs and improves performance
+- **User Experience**: Image library provides immediate value with reusable assets
+- **Security First**: File validation, quotas, and admin controls from day one
+- **Scalability Planning**: Architecture supports millions of images and users
+
+---
+
 ## Session Template for Future Updates
 
 ```markdown
