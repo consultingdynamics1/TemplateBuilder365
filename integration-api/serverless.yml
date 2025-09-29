@@ -221,14 +221,6 @@ resources:
       Export:
         Name: ${self:service}-${self:provider.stage}-HttpApiId
     
-    ApiGatewayRestApiRootResourceId:
-      Value:
-        Fn::GetAtt:
-          - HttpApi
-          - RootResourceId
-      Export:
-        Name: ${self:service}-${self:provider.stage}-HttpApiRootResourceId
-    
     ServiceEndpoint:
       Description: URL of the service endpoint
       Value:

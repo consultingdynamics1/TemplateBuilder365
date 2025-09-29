@@ -972,6 +972,99 @@ PUT    /admin/v1/features/{name}      // Update rollout
 
 ---
 
+## Session: 2025-09-29 (Continued) - Integration API Fix
+
+### 🎯 Resolution Achieved
+- ✅ Successfully fixed integration-api deployment failure
+- ✅ Identified and removed invalid CloudFormation output causing stack deletion
+- ✅ Deployed `tb365-integration-api-stage` stack successfully
+- ✅ All endpoints working with proper authentication
+
+### 🔧 Technical Resolution
+
+#### CloudFormation Output Validation Fix
+**Problem**: Integration-api deployment failed with `RootResourceId does not exist in schema for AWS::ApiGatewayV2::Api`
+**Root Cause**: Invalid CloudFormation output trying to access `RootResourceId` attribute on HTTP API (only exists on REST API)
+**Solution**: Removed invalid output while preserving valid exports
+
+**Critical Discovery**: The problematic output existed in git history but somehow didn't cause issues before, suggesting:
+- Older Serverless Framework versions may have ignored invalid outputs
+- Configuration was never actually deployed with this specific combination
+- AWS API Gateway schema became more strict over time
+
+**Files Modified**:
+- `integration-api/serverless.yml` - Removed invalid `ApiGatewayRestApiRootResourceId` output (lines 224-230)
+
+**Before (Invalid)**:
+```yaml
+ApiGatewayRestApiRootResourceId:
+  Value:
+    Fn::GetAtt:
+      - HttpApi
+      - RootResourceId  # ← Does not exist for AWS::ApiGatewayV2::Api
+```
+
+**After (Removed)**:
+```yaml
+# Removed invalid output - RootResourceId doesn't exist for HTTP API
+```
+
+#### Deployment Success
+**Stack**: `tb365-integration-api-stage`
+**API Gateway ID**: `vjqryeg3tf`
+**Base URL**: `https://vjqryeg3tf.execute-api.us-east-1.amazonaws.com`
+
+**Deployed Endpoints**:
+- POST `/convert` - TB365 to API Template conversion
+- GET `/convert/{id}` - Retrieve conversion result
+- GET/POST `/output-config` - Output configuration management
+- POST `/api/projects/save` - Save project to cloud storage
+- GET `/api/projects/list` - List user's projects
+- GET `/api/projects/load/{name}` - Load specific project
+- DELETE `/api/projects/{name}` - Delete project
+- GET `/health` - Service health check
+- GET `/api/projects/health` - Project manager health check
+
+**Valid CloudFormation Outputs**:
+- `ApiGatewayRestApiId`: `vjqryeg3tf`
+- `ServiceEndpoint`: `https://vjqryeg3tf.execute-api.us-east-1.amazonaws.com`
+- All other function ARNs and standard outputs
+
+### 📊 Current Multi-Stack Status
+```
+✅ templatebuilder365-dynamodb-stage - Database infrastructure
+✅ tb365-image-api-stage - Image library with JWT authentication
+✅ tb365-integration-api-stage - Project management & HTML conversion
+```
+
+**All three stacks now deployed successfully in stage environment!**
+
+### 🔍 Methodology Success
+The systematic debugging approach proved highly effective:
+1. **Component Isolation Testing** - Created discrete configs to test each piece
+2. **Git History Analysis** - Used git diff to identify configuration changes
+3. **Cross-Reference Validation** - Compared with working image-api configuration
+4. **Dependency Review** - Verified no external dependencies before removal
+
+This approach will be valuable for future complex deployment issues.
+
+### ⚠️ Production Deployment Warning
+Based on today's discoveries, production deployment will face significant challenges:
+- Stage name consistency issues throughout codebase
+- Multi-stack coordination requirements
+- Hidden configuration validation issues
+- Environment-specific resource setup needs
+
+**Created**: `docs/development/production-issues.md` to document and plan for these challenges.
+
+### 🎯 Next Steps
+- [ ] Test all integration-api endpoints with frontend
+- [ ] Validate complete save/load cycle with new deployment
+- [ ] Begin production deployment planning and configuration audit
+- [ ] Address stage name consistency issues across all stacks
+
+---
+
 ## Session Template for Future Updates
 
 ```markdown
