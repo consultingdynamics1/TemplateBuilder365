@@ -121,6 +121,144 @@ async createImageUrlForEnvironment(file: File): Promise<string> {
 
 ---
 
+## Session: 2025-09-28
+
+### 🎯 Current Status: IMAGE LIBRARY BACKEND IMPLEMENTATION
+**Status**: 🔄 In Progress - Image library API complete, deployment issue identified
+**Achievement**: Complete JWT-protected image library with DynamoDB + S3 architecture
+**Blocker**: Integration-API deployment conflict - dual project-manager handlers causing issues
+
+### 🔧 Technical Implementation
+
+#### 1. Image Library Backend Complete ✅
+**Objective**: Replace Base64-embedded images with shared image library using S3 + DynamoDB
+**Architecture**: Single table DynamoDB design with JWT authentication and user isolation
+
+**Files Created**:
+- `integration-api/functions/image-library.js` - Complete image library API with 6 endpoints
+- `dynamodb-stack/` - Dedicated DynamoDB infrastructure stack
+- `integration-api/test-image-library.js` - OAuth PKCE authentication test suite
+- `integration-api/test-deployment.js` - Deployment verification utilities
+
+**API Endpoints Implemented**:
+```javascript
+POST   /api/images/upload     // Get presigned URL for image upload
+GET    /api/images            // List user's images with pagination
+GET    /api/images/{imageId}  // Get specific image metadata
+PUT    /api/images/{imageId}  // Update image metadata/tags
+DELETE /api/images/{imageId}  // Delete image and metadata
+GET    /api/images/search     // Search images by tags
+```
+
+**Security Features**:
+- JWT Cognito authentication on all endpoints
+- User data isolation via partition keys (`USER#{userId}`)
+- S3 presigned URLs for secure upload/download
+- DynamoDB GSI indexes for efficient tag-based search
+
+#### 2. DynamoDB Infrastructure Deployed ✅
+**Objective**: Standalone DynamoDB stack for independent deployment management
+**Solution**: Separate `dynamodb-stack` with CloudFormation exports
+
+**DynamoDB Schema**:
+```javascript
+// Single table design with GSI indexes
+Primary Key: PK (USER#{userId}) + SK (IMAGE#{imageId})
+GSI1: TagSearchIndex - IMAGE_TAG#{tag} for tag-based search
+GSI2: EntityTypeIndex - ENTITY#{type} for admin queries
+GSI3: SystemIndex - SYSTEM#{metric} for analytics
+```
+
+**Deployment Status**:
+- ✅ DynamoDB stack: Successfully deployed
+- ❌ Integration-API stack: **DEPLOYMENT CONFLICT IDENTIFIED**
+
+#### 3. Deployment Issue Analysis 🔍
+**Problem**: Integration-API deployment fails with "Stack does not exist" error
+**Root Cause**: **Dual project-manager handler configuration causing serverless framework confusion**
+
+**Discovered Issue**:
+```yaml
+# serverless.yml has inconsistent handler paths:
+projectManager:
+  handler: project-manager-sdk-v2.handler        # ← Root level file
+projectHealthCheck:
+  handler: functions/project-manager.health      # ← Functions folder
+```
+
+**File Structure Conflict**:
+```
+integration-api/
+├── project-manager-sdk-v2.js          ← v2 (self-contained, AWS SDK v3)
+├── functions/
+│   ├── project-manager.js             ← v1 (uses utils/, modular)
+│   ├── image-library.js               ← New file (complete)
+│   └── tb365-converter.js
+└── serverless.yml                     ← Points to BOTH locations!
+```
+
+**Analysis**:
+- **v1** (`functions/project-manager.js`): Modular design with utils dependencies
+- **v2** (`project-manager-sdk-v2.js`): Self-contained with built-in AWS SDK v3
+- **Serverless.yml**: References both versions inconsistently
+- **Deployment Impact**: Framework gets confused about handler resolution
+
+#### 4. S3 Investigation Results ✅
+**Question**: Why are there two project-manager implementations?
+**Evidence**: From 2025-09-17 session log, v2 was created for version retention features
+
+**S3 Evidence of Successful V2 Deployment**:
+```bash
+# S3 shows versioning was working in stage environment:
+dev/test-user-123/projects/Test Project/current.json
+dev/test-user-123/projects/Test Project/v1/template.tb365
+dev/test-user-123/projects/Test Project/v2/template.tb365
+
+# Serverless deployment artifacts confirm V2 was deployed:
+serverless/tb365-unified-api/stage/1758220295641-2025-09-18T18:31:35.641Z/
+- PROJECT_VERSION_RETENTION: "3" (present in environment)
+- Multiple successful deployments between 2025-09-18 and 2025-09-28
+```
+
+**Key Finding**: **V2 was successfully deployed and working in stage environment!**
+- Version retention feature was functional (v1/v2 folders in S3)
+- Multiple deployment cycles were successful
+- All stacks show DELETE_COMPLETE (cleanup after testing)
+
+**Root Cause Analysis**:
+- V2 worked fine when deployed independently
+- Current issue is the **inconsistent dual-handler configuration**
+- Serverless framework gets confused when handlers point to different locations
+- Need to consolidate to single handler approach for reliable deployment
+
+### 🧪 Testing Infrastructure Ready
+- **Authentication**: OAuth PKCE flow with test user (brunipeter94@gmail.com)
+- **API Testing**: Comprehensive test suite with token management
+- **DynamoDB**: Deployed and ready for image metadata storage
+- **Dependencies**: Added DynamoDB client packages to integration-api
+
+### 🚨 Current Blocker: Project Manager Conflict
+**Priority**: Resolve dual project-manager handler configuration
+**Options**:
+1. Standardize on v2 (project-manager-sdk-v2.js) - move to functions/
+2. Standardize on v1 (functions/project-manager.js) - remove v2
+3. Investigate historical reason for dual implementations
+
+**Next Steps**:
+1. Determine canonical project-manager implementation
+2. Clean up serverless.yml handler configuration
+3. Deploy integration-api with image library endpoints
+4. Test complete image library workflow
+
+### 🔄 Session Recovery State
+**If disconnected, key context**:
+- Image library backend is 100% implemented and ready
+- DynamoDB stack is deployed successfully
+- Integration-API deployment blocked by project-manager handler conflict
+- Need to resolve dual handler issue before proceeding with deployment testing
+
+---
+
 ## Session: 2025-09-17
 
 ### 🎯 Objectives Completed
@@ -721,6 +859,116 @@ PUT    /admin/v1/features/{name}      // Update rollout
 - **User Experience**: Image library provides immediate value with reusable assets
 - **Security First**: File validation, quotas, and admin controls from day one
 - **Scalability Planning**: Architecture supports millions of images and users
+
+---
+
+## Session: 2025-09-29
+
+### 🎯 Objectives Completed
+- Diagnosed serverless framework deployment issues for integration-api
+- Implemented systematic isolation testing methodology
+- Identified root cause of deployment failures
+- Created comprehensive multi-stack architecture documentation
+- Successfully deployed and tested image-api as separate stack
+
+### 🔧 Technical Implementation
+
+#### Systematic Deployment Debugging
+**Problem**: Integration-api failing to deploy with "Stack does not exist" error despite clean configuration
+**Approach**: Created discrete serverless.yml files to isolate components:
+- `serverless-create-s3-buckets.yml` - Infrastructure only ✅
+- `serverless-single-function.yml` - Basic Lambda ✅
+- `serverless-function-api.yml` - API Gateway integration ✅
+- `serverless-with-auth.yml` - Cognito JWT authentication ✅
+- `serverless-with-s3.yml` - S3 IAM policies ✅
+
+**Key Finding**: All individual components work perfectly - issue is configuration mismatch
+
+#### Multi-Stack Architecture Implementation
+**Achievement**: Successfully separated image functionality into dedicated stack
+**Files Created**:
+- `image-api/serverless.yml` - Dedicated image library API (deployed successfully)
+- `image-api/functions/image-library.js` - Complete JWT-protected image management
+- `image-api/test-image-library.js` - OAuth PKCE test suite
+- `STACK-ARCHITECTURE.md` - Complete multi-stack deployment documentation
+
+**Stack Separation**:
+```
+✅ templatebuilder365-dynamodb-stage - Database infrastructure
+✅ tb365-image-api-stage - Image library (deployed)
+❌ tb365-integration-api-stage - Project + HTML conversion (deployment failing)
+```
+
+#### Root Cause Analysis
+**Critical Discovery**: Git diff revealed multiple breaking changes:
+1. **Service name changed**: `tb365-unified-api` → `tb365-integration-api`
+2. **Stage environment changed**: `'dev'` → `'stage'`
+3. **Handler path changed**: `project-manager-sdk-v2.handler` → `functions/project-manager.handler`
+4. **File deletion**: Original working `project-manager-sdk-v2.js` was deleted
+5. **Deployment bucket mismatch**: Original used 'dev' stage with 'stage' bucket
+
+### 📊 Current Project State
+
+#### Working Components
+- **Image API**: ✅ Fully deployed and functional
+  - Endpoint: `https://7lr787c2s3.execute-api.us-east-1.amazonaws.com`
+  - JWT authentication working
+  - S3 presigned URLs operational
+  - DynamoDB integration complete
+
+- **DynamoDB Stack**: ✅ Stable infrastructure
+  - Unified single-table design
+  - Three GSI indexes for efficient querying
+  - CloudFormation exports for cross-stack references
+
+#### Failing Components
+- **Integration API**: ❌ Deployment blocked by configuration mismatches
+  - All individual components test successfully
+  - Issue is environment/stage configuration alignment
+  - Original working state existed with different service name and stage
+
+#### Legacy Working Systems (Untouched)
+- **HTML Converter**: `https://3r46i2h8rl.execute-api.us-east-1.amazonaws.com` (working)
+- **Project Management**: `https://keipbp2fel.execute-api.us-east-1.amazonaws.com` (working)
+
+### 🔧 DynamoDB Configuration Cleanup
+**Problem**: Integration-api had unnecessary DynamoDB configuration
+**Analysis**: Functions only use S3 for project storage, not DynamoDB
+**Action**: Removed DynamoDB environment variables and IAM policies
+**Files Modified**:
+- `integration-api/serverless.yml` - Removed DYNAMODB_TABLE and dynamodb IAM policies
+
+### 🎯 Next Steps (Priority Order)
+1. **Fix stage/environment alignment** - Revert to original 'dev' stage or align all resources to 'stage'
+2. **Restore working handler configuration** - Either restore `project-manager-sdk-v2.js` or fix current setup
+3. **Test integration-api deployment** with corrected configuration
+4. **Deploy to production** once stage environment is stable
+5. **Implement frontend migration** from old image API to new image library
+
+### 🔍 Technical Decisions Made
+
+#### Multi-Stack Architecture Benefits
+- **Independent deployment** - Image stack succeeded while integration-api had issues
+- **Isolation** - Problems in one stack don't affect others
+- **Clear separation of concerns** - Database, images, and project management as distinct services
+- **Easier troubleshooting** - Systematic component-by-component testing possible
+
+#### Systematic Debugging Methodology
+- **Component isolation** - Test individual pieces before complex integrations
+- **Git-based analysis** - Compare working vs broken states systematically
+- **Preserve working systems** - Never modify production endpoints during debugging
+
+#### Package Management Resolution
+- **Legacy peer dependencies** - Used `--legacy-peer-deps` to resolve serverless framework conflicts
+- **Version alignment** - Confirmed serverless v4.19.1 works (image-api proof)
+- **Dependency cleanup** - Removed unnecessary webpack dependencies that caused conflicts
+
+### 💡 Key Session Insights
+- **Systematic isolation beats random fixes** - Component-by-component testing identified exact working boundaries
+- **Git history is crucial** - Changes between working and broken states revealed exact cause
+- **Environment consistency matters** - Stage name changes have cascading effects on resource references
+- **Multi-stack architecture proves its value** - Image API deployed successfully while integration-api struggled
+- **Don't modify working production systems** - Confirmed we didn't break existing functionality
 
 ---
 

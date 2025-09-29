@@ -1,0 +1,67 @@
+# Step 3: Test Function + API Gateway (No Auth)
+# Purpose: Isolate API Gateway configuration without authentication
+# Stack: tb365-integration-api-test-stage
+
+service: tb365-integration-api-test
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'stage'}
+  deploymentBucket:
+    name: tb365-serverless-deployments-${self:provider.stage}
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    NODE_ENV: ${self:provider.stage}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      maxAge: 300
+
+functions:
+  # Simple health check with API Gateway endpoint
+  healthCheck:
+    handler: functions/tb365-converter.health
+    timeout: 6
+    memorySize: 1024
+    events:
+      - httpApi:
+          path: /health
+          method: get
+          # NO AUTHORIZER - testing API Gateway only
+
+# NO RESOURCES - Function + API Gateway only test
+
+package:
+  excludeDevDependencies: true
+  patterns:
+    - '!test*'
+    - '!*.test.js'
+    - '!test-output/**'
+    - '!test-*/**'
+    - '!deploy*/**'
+    - '!minimal-converter/**'
+    - '!node_modules/**'
+    - 'node_modules/joi/**'
+    - 'node_modules/uuid/**'
+    - '!*.md'
+    - '!docs/**'
+    - '!examples/**'
+    - '!DEPLOYMENT-GUIDE.md'
+    - '!README.md'
+    - '!webpack.config.js'

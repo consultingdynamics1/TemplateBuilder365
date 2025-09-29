@@ -1,0 +1,118 @@
+# Step 1: Test S3 Bucket Creation Only
+# Purpose: Isolate infrastructure deployment without functions
+# Stack: tb365-integration-s3-test-stage
+
+service: tb365-integration-s3-test
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'stage'}
+  deploymentBucket:
+    name: tb365-serverless-deployments-${self:provider.stage}
+
+# NO FUNCTIONS - Infrastructure only
+
+resources:
+  Resources:
+    # DynamoDB table is managed by separate dynamodb-stack
+
+    Tb365DesignsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: tb365-designs-${self:provider.stage}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    ApiTemplateExportsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: apitemplate-exports-${self:provider.stage}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    DevBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: templatebuilder365-${self:provider.stage}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+  Outputs:
+    Tb365DesignsBucketName:
+      Value:
+        Ref: Tb365DesignsBucket
+      Export:
+        Name: ${self:service}-${self:provider.stage}-Tb365DesignsBucket
+
+    ApiTemplateExportsBucketName:
+      Value:
+        Ref: ApiTemplateExportsBucket
+      Export:
+        Name: ${self:service}-${self:provider.stage}-ApiTemplateExportsBucket
+
+    DevBucketName:
+      Value:
+        Ref: DevBucket
+      Export:
+        Name: ${self:service}-${self:provider.stage}-DevBucket
+
+package:
+  excludeDevDependencies: true

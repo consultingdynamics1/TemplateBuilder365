@@ -1,14 +1,14 @@
-service: tb365-unified-api
+service: tb365-integration-api
 
 frameworkVersion: '4'
 
 provider:
   name: aws
   runtime: nodejs18.x
-  region: ${opt:region, 'us-east-1'}
-  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  stage: ${opt:stage, 'stage'}
   deploymentBucket:
-    name: tb365-serverless-deployments-stage
+    name: tb365-serverless-deployments-${self:provider.stage}
   environment:
     STAGE: ${self:provider.stage}
     REGION: ${self:provider.region}
@@ -93,7 +93,7 @@ functions:
 
   # Project Management Function
   projectManager:
-    handler: project-manager-sdk-v2.handler
+    handler: functions/project-manager.handler
     timeout: 30
     memorySize: 512
     events:
@@ -132,8 +132,13 @@ functions:
           path: /api/projects/health
           method: get
 
+  # Image Library Function - MOVED TO SEPARATE tb365-image-api-stage STACK
+  # See: image-api/ directory for dedicated image management API
+
 resources:
   Resources:
+    # DynamoDB table is managed by separate dynamodb-stack
+
     Tb365DesignsBucket:
       Type: AWS::S3::Bucket
       Properties:

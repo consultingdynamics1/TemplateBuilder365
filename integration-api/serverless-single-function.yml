@@ -1,0 +1,48 @@
+# Step 2: Test Single Function Only
+# Purpose: Isolate Lambda function deployment without API Gateway or resources
+# Stack: tb365-integration-function-test-stage
+
+service: tb365-integration-function-test
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'stage'}
+  deploymentBucket:
+    name: tb365-serverless-deployments-${self:provider.stage}
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    NODE_ENV: ${self:provider.stage}
+
+functions:
+  # Simple health check function - no external dependencies
+  healthCheck:
+    handler: functions/tb365-converter.health
+    timeout: 6
+    memorySize: 1024
+    # NO API GATEWAY EVENTS - function only
+
+# NO RESOURCES - Function only test
+
+package:
+  excludeDevDependencies: true
+  patterns:
+    - '!test*'
+    - '!*.test.js'
+    - '!test-output/**'
+    - '!test-*/**'
+    - '!deploy*/**'
+    - '!minimal-converter/**'
+    - '!node_modules/**'
+    - 'node_modules/joi/**'
+    - 'node_modules/uuid/**'
+    - '!*.md'
+    - '!docs/**'
+    - '!examples/**'
+    - '!DEPLOYMENT-GUIDE.md'
+    - '!README.md'
+    - '!webpack.config.js'

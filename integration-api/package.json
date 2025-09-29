@@ -5,8 +5,9 @@
   "main": "functions/tb365-converter.js",
   "scripts": {
     "deploy": "serverless deploy",
-    "deploy:dev": "serverless deploy --stage dev",
+    "deploy:stage": "serverless deploy --stage stage",
     "deploy:prod": "serverless deploy --stage prod",
+    "// NOTE": "Backend and Frontend both use 'stage' for development consistency",
     "invoke": "serverless invoke",
     "invoke:local": "serverless invoke local",
     "logs": "serverless logs",
@@ -26,10 +27,13 @@
     "test:lambda": "serverless invoke local --function convertTb365ToApiTemplate --path test-event.json"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.890.0",
     "@aws-sdk/client-s3": "^3.890.0",
+    "@aws-sdk/lib-dynamodb": "^3.890.0",
     "@aws-sdk/s3-request-presigner": "^3.658.1",
     "aws-lambda": "^1.0.7",
     "joi": "^17.13.3",
+    "node-fetch": "^3.3.2",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

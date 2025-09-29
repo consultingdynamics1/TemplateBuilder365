@@ -1,0 +1,115 @@
+# Step 5: Test Function + API Gateway + Auth + S3 IAM Policies
+# Purpose: Test S3 permissions (what integration-api actually uses)
+# Stack: tb365-integration-s3-iam-test-stage
+
+service: tb365-integration-s3-iam-test
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'stage'}
+  deploymentBucket:
+    name: tb365-serverless-deployments-${self:provider.stage}
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    TB365_BUCKET: tb365-designs-${self:provider.stage}
+    API_TEMPLATE_BUCKET: apitemplate-exports-${self:provider.stage}
+    DEV_BUCKET: templatebuilder365-${self:provider.stage}
+    NODE_ENV: ${self:provider.stage}
+    OUTPUT_MODE: response-only
+    LOCAL_OUTPUT_DIR: /tmp/test-output
+    COGNITO_USER_POOL_ID: us-east-1_RIOPGg1Cq
+    COGNITO_CLIENT_ID: 2addji24p0obg5sqedgise13i4
+    PROJECT_VERSION_RETENTION: '3'
+    # NO DYNAMODB_TABLE - not needed for S3-only functions
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      maxAge: 300
+    authorizers:
+      cognitoAuthorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_RIOPGg1Cq
+        audience:
+          - 2addji24p0obg5sqedgise13i4
+  iamRoleStatements:
+    # S3 Object permissions for project storage and HTML conversion
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:DeleteObject
+      Resource:
+        - "arn:aws:s3:::tb365-designs-${self:provider.stage}/*"
+        - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}/*"
+        - "arn:aws:s3:::templatebuilder365-${self:provider.stage}/*"
+        - "arn:aws:s3:::templatebuilder365-user-data/*"
+    # S3 Bucket permissions for listing
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+      Resource:
+        - "arn:aws:s3:::tb365-designs-${self:provider.stage}"
+        - "arn:aws:s3:::apitemplate-exports-${self:provider.stage}"
+        - "arn:aws:s3:::templatebuilder365-${self:provider.stage}"
+        - "arn:aws:s3:::templatebuilder365-user-data"
+
+functions:
+  # Health check without auth
+  healthCheck:
+    handler: functions/tb365-converter.health
+    timeout: 6
+    memorySize: 1024
+    events:
+      - httpApi:
+          path: /health
+          method: get
+
+  # Test project manager endpoint (S3 only)
+  projectTest:
+    handler: functions/project-manager.handler
+    timeout: 30
+    memorySize: 512
+    events:
+      - httpApi:
+          path: /test/projects
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+
+# NO RESOURCES - Testing IAM policies without S3 bucket creation
+
+package:
+  excludeDevDependencies: true
+  patterns:
+    - '!test*'
+    - '!*.test.js'
+    - '!test-output/**'
+    - '!test-*/**'
+    - '!deploy*/**'
+    - '!minimal-converter/**'
+    - '!node_modules/**'
+    - 'node_modules/joi/**'
+    - 'node_modules/uuid/**'
+    - '!*.md'
+    - '!docs/**'
+    - '!examples/**'
+    - '!DEPLOYMENT-GUIDE.md'
+    - '!README.md'
+    - '!webpack.config.js'

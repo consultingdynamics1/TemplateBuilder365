@@ -1,0 +1,88 @@
+# Step 4: Test Function + API Gateway + Authentication
+# Purpose: Isolate Cognito JWT authentication (matching working image-api exactly)
+# Stack: tb365-integration-auth-test-stage
+
+service: tb365-integration-auth-test
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'stage'}
+  deploymentBucket:
+    name: tb365-serverless-deployments-${self:provider.stage}
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    NODE_ENV: ${self:provider.stage}
+    COGNITO_USER_POOL_ID: us-east-1_RIOPGg1Cq
+    COGNITO_CLIENT_ID: 2addji24p0obg5sqedgise13i4
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      maxAge: 300
+    authorizers:
+      cognitoAuthorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_RIOPGg1Cq
+        audience:
+          - 2addji24p0obg5sqedgise13i4
+
+functions:
+  # Health check without auth (like image-api health endpoint)
+  healthCheck:
+    handler: functions/tb365-converter.health
+    timeout: 6
+    memorySize: 1024
+    events:
+      - httpApi:
+          path: /health
+          method: get
+          # NO AUTHORIZER - public health check
+
+  # Protected endpoint with auth (like image-api protected endpoints)
+  protectedTest:
+    handler: functions/tb365-converter.health
+    timeout: 6
+    memorySize: 1024
+    events:
+      - httpApi:
+          path: /protected
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+
+# NO RESOURCES - Function + API Gateway + Auth only test
+
+package:
+  excludeDevDependencies: true
+  patterns:
+    - '!test*'
+    - '!*.test.js'
+    - '!test-output/**'
+    - '!test-*/**'
+    - '!deploy*/**'
+    - '!minimal-converter/**'
+    - '!node_modules/**'
+    - 'node_modules/joi/**'
+    - 'node_modules/uuid/**'
+    - '!*.md'
+    - '!docs/**'
+    - '!examples/**'
+    - '!DEPLOYMENT-GUIDE.md'
+    - '!README.md'
+    - '!webpack.config.js'
