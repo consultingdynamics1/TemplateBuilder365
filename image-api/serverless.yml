@@ -1,0 +1,137 @@
+service: tb365-image-api
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'stage'}
+  deploymentBucket:
+    name: tb365-serverless-deployments-${self:provider.stage}
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    NODE_ENV: ${self:provider.stage}
+    COGNITO_USER_POOL_ID: us-east-1_RIOPGg1Cq
+    COGNITO_CLIENT_ID: 2addji24p0obg5sqedgise13i4
+    DYNAMODB_TABLE: TemplateBuilder365-Data-${self:provider.stage}
+    TB365_BUCKET: tb365-designs-${self:provider.stage}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      maxAge: 300
+    authorizers:
+      cognitoAuthorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_RIOPGg1Cq
+        audience:
+          - 2addji24p0obg5sqedgise13i4
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:DeleteObject
+      Resource:
+        - "arn:aws:s3:::tb365-designs-${self:provider.stage}/*"
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+      Resource:
+        - "arn:aws:s3:::tb365-designs-${self:provider.stage}"
+    - Effect: Allow
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:Query
+        - dynamodb:Scan
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/TemplateBuilder365-Data-${self:provider.stage}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/TemplateBuilder365-Data-${self:provider.stage}/index/*"
+
+functions:
+  # Image Library Function
+  imageLibrary:
+    handler: functions/image-library.handler
+    timeout: 29
+    memorySize: 512
+    events:
+      # Image upload - get presigned URL
+      - httpApi:
+          path: /api/images/upload
+          method: post
+          authorizer:
+            name: cognitoAuthorizer
+
+      # List user's images with optional search/filtering
+      - httpApi:
+          path: /api/images
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+
+      # Get specific image metadata
+      - httpApi:
+          path: /api/images/{imageId}
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+
+      # Update image metadata (tags, filename)
+      - httpApi:
+          path: /api/images/{imageId}
+          method: put
+          authorizer:
+            name: cognitoAuthorizer
+
+      # Delete image and metadata
+      - httpApi:
+          path: /api/images/{imageId}
+          method: delete
+          authorizer:
+            name: cognitoAuthorizer
+
+      # Search images by tags
+      - httpApi:
+          path: /api/images/search
+          method: get
+          authorizer:
+            name: cognitoAuthorizer
+
+  healthCheck:
+    handler: functions/image-library.health
+    events:
+      - httpApi:
+          path: /health
+          method: get
+
+plugins:
+  - serverless-offline
+
+package:
+  excludeDevDependencies: true
+  patterns:
+    - '!test*'
+    - '!*.test.js'
+    - '!*.md'
+    - '!docs/**'
+
+custom:
+  serverless-offline:
+    httpPort: 3002
+    host: 0.0.0.0

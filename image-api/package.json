@@ -1,0 +1,41 @@
+{
+  "name": "tb365-image-api",
+  "version": "1.0.0",
+  "description": "Image Library API for TemplateBuilder365 - JWT protected image management with S3 + DynamoDB",
+  "main": "functions/image-library.js",
+  "scripts": {
+    "deploy": "serverless deploy",
+    "deploy:stage": "serverless deploy --stage stage",
+    "deploy:prod": "serverless deploy --stage prod",
+    "remove": "serverless remove",
+    "remove:stage": "serverless remove --stage stage",
+    "remove:prod": "serverless remove --stage prod",
+    "info": "serverless info",
+    "test": "node test-image-library.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.890.0",
+    "@aws-sdk/client-s3": "^3.890.0",
+    "@aws-sdk/lib-dynamodb": "^3.890.0",
+    "@aws-sdk/s3-request-presigner": "^3.658.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "serverless": "^4.4.3",
+    "serverless-offline": "^12.0.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "image-library",
+    "templatebuilder365",
+    "s3",
+    "dynamodb",
+    "jwt",
+    "serverless",
+    "aws"
+  ],
+  "author": "TemplateBuilder365",
+  "license": "MIT"
+}
