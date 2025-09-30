@@ -1065,6 +1065,112 @@ Based on today's discoveries, production deployment will face significant challe
 
 ---
 
+## Session: 2025-09-29 (Continued) - Image API Test Harness Development
+
+### 🎯 Objectives Completed
+- ✅ Analyzed image upload behavior differences between development and stage environments
+- ✅ Confirmed Base64 conversion working correctly in development mode (localhost)
+- ✅ Identified stage environment uses blob URLs (correct behavior for cloud storage)
+- ✅ Built comprehensive image API test harness for backend validation
+- ✅ Established authentication pattern matching existing codebase
+
+### 🔧 Technical Implementation
+
+#### Image Upload Behavior Analysis
+**Discovery**: Image upload works differently by environment design:
+- **Development (localhost)**: Converts to Base64 immediately for embedded storage
+- **Stage/Production (CloudFront)**: Uses blob URLs temporarily until cloud save
+
+**Confirmation**: This is the **intended behavior** - no bug to fix.
+
+#### Image API Test Harness Creation
+**Purpose**: Validate deployed image-api backend before building frontend integration
+**Approach**: Comprehensive testing suite with automatic test image generation
+
+**Files Created**:
+- `tests/image-api-test.js` - Complete test harness with ES module support
+- `tests/test-images/` - Automatically generated minimal PNG test files
+- `tests/README.md` - Detailed setup and usage instructions
+
+**Test Coverage**:
+```javascript
+// Endpoints tested:
+✅ GET /health - Service health check (working)
+🔑 POST /api/images - Upload with metadata (needs JWT)
+🔑 GET /api/images - List user images (needs JWT)
+🔑 GET /api/images/{id} - Retrieve specific image (needs JWT)
+🔑 GET /api/images/search - Search by tags (needs JWT)
+🔑 DELETE /api/images/{id} - Delete image (needs JWT)
+```
+
+#### Authentication Integration
+**Pattern**: Uses same localStorage approach as existing codebase
+- Reads JWT token from command line parameter
+- Uses `Authorization: Bearer ${token}` header (matches imageService.ts pattern)
+- Provides clear instructions for token extraction from browser
+
+**Usage**:
+```bash
+# Health check only (no auth)
+node tests/image-api-test.js
+
+# Full test suite with authentication
+node tests/image-api-test.js "jwt-token-from-browser"
+```
+
+### 📊 Current Project State
+
+#### Multi-Stack Architecture Status
+```
+✅ templatebuilder365-dynamodb-stage - Database infrastructure
+✅ tb365-image-api-stage - Image library (deployed & health check passing)
+✅ tb365-integration-api-stage - Project management & HTML conversion
+```
+
+#### Image Management Architecture Plan
+**Strategy**: Environment-based image handling
+- **Development**: Keep current Base64 flow (simple, embedded)
+- **Stage/Production**: Implement cloud image library with user folders
+
+**User Storage Structure**: `{userId}/images/` with DynamoDB metadata
+- Single resolution images (start simple)
+- Tagging and search capabilities
+- Usage tracking for plan-based limits (future)
+
+### 🎯 Next Steps (Session Continuation)
+
+#### Immediate (Next Session Start)
+1. **Get JWT token** from CloudFront app localStorage (`tb365_token`)
+2. **Run full test suite** to validate image-api backend functionality
+3. **Verify** upload → metadata → search → retrieval → deletion cycle
+
+#### Following Steps
+4. **Build test UI** for image library user experience design
+5. **Create enhanced image picker** for dashboard integration
+6. **Replace stage/production blob URL flow** with cloud image library
+
+### 🔍 Technical Decisions Made
+
+**Authentication Approach**: Reuse existing localStorage pattern instead of building new OAuth flow
+- Leverages proven authentication already in use
+- Maintains consistency with existing codebase
+- Simplifies test harness complexity
+
+**Test Strategy**: Backend validation first, then UI development
+- Ensures solid foundation before building user interface
+- Allows iterative UX design without backend changes
+- Reduces integration complexity
+
+### 📋 Session Break Point
+
+**Current Status**: Test harness ready for JWT token and full backend validation
+**Blocker**: Need JWT token from browser localStorage for authenticated endpoint testing
+**Next Action**: Extract token from CloudFront app and run comprehensive test suite
+
+**To Resume**: Run `node tests/image-api-test.js "token-here"` to validate complete image API functionality
+
+---
+
 ## Session Template for Future Updates
 
 ```markdown
