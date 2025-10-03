@@ -4,11 +4,12 @@ frameworkVersion: '4'
 
 provider:
   name: aws
-  runtime: nodejs18.x
+  runtime: nodejs20.x
   region: us-east-1
   stage: ${opt:stage, 'stage'}
   deploymentBucket:
     name: tb365-serverless-deployments-${self:provider.stage}
+    serverSideEncryption: AES256
   environment:
     STAGE: ${self:provider.stage}
     REGION: ${self:provider.region}
@@ -40,6 +41,9 @@ provider:
         issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_RIOPGg1Cq
         audience:
           - 2addji24p0obg5sqedgise13i4
+  logs:
+    httpApi:
+      format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength","integrationError":"$context.integrationErrorMessage"}'
   iamRoleStatements:
     - Effect: Allow
       Action:
