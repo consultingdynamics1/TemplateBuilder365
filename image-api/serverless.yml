@@ -17,6 +17,7 @@ provider:
     COGNITO_CLIENT_ID: 2addji24p0obg5sqedgise13i4
     DYNAMODB_TABLE: TemplateBuilder365-Data-${self:provider.stage}
     TB365_BUCKET: tb365-designs-${self:provider.stage}
+    USE_DYNAMODB: ${env:USE_DYNAMODB, 'false'}
   httpApi:
     cors:
       allowedOrigins:
@@ -71,50 +72,39 @@ functions:
     timeout: 29
     memorySize: 512
     events:
-      # Image upload - get presigned URL
+      # Image upload - get presigned URL (no auth in mock mode)
       - httpApi:
           path: /api/images/upload
           method: post
-          authorizer:
-            name: cognitoAuthorizer
 
-      # List user's images with optional search/filtering
+      # List user's images with optional search/filtering (no auth in mock mode)
       - httpApi:
           path: /api/images
           method: get
-          authorizer:
-            name: cognitoAuthorizer
 
-      # Get specific image metadata
+      # Get specific image metadata (no auth in mock mode)
       - httpApi:
           path: /api/images/{imageId}
           method: get
-          authorizer:
-            name: cognitoAuthorizer
 
-      # Update image metadata (tags, filename)
+      # Update image metadata (no auth in mock mode)
       - httpApi:
           path: /api/images/{imageId}
           method: put
-          authorizer:
-            name: cognitoAuthorizer
 
-      # Delete image and metadata
+      # Delete image and metadata (no auth in mock mode)
       - httpApi:
           path: /api/images/{imageId}
           method: delete
-          authorizer:
-            name: cognitoAuthorizer
 
-      # Search images by tags
+      # Search images by tags (no auth in mock mode)
       - httpApi:
           path: /api/images/search
           method: get
-          authorizer:
-            name: cognitoAuthorizer
 
   healthCheck:
     handler: functions/image-library.health
+    description: "Health check endpoint for image API"
     events:
       - httpApi:
           path: /health

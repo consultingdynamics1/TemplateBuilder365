@@ -17,6 +17,7 @@ const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' })
 // Environment variables
 const DYNAMODB_TABLE = process.env.DYNAMODB_TABLE;
 const S3_BUCKET = process.env.TB365_BUCKET || 'tb365-designs-stage';
+const USE_DYNAMODB = process.env.USE_DYNAMODB === 'true';
 
 // Predefined tag categories for validation
 const PREDEFINED_TAG_CATEGORIES = {
@@ -63,9 +64,19 @@ function errorResponse(statusCode, message, details = {}, corsHeaders = {}) {
 }
 
 /**
- * Extract user information from JWT token
+ * Extract user information from JWT token or return mock user in development
  */
 function getUserFromEvent(event) {
+  if (!USE_DYNAMODB) {
+    // Mock mode: Return a test user
+    console.log('🧪 MOCK MODE: Using mock user for testing');
+    return {
+      userId: 'mock-user-123',
+      email: 'mockuser@example.com',
+      userPartition: 'USER#mock-user-123'
+    };
+  }
+
   try {
     const claims = event.requestContext?.authorizer?.jwt?.claims;
     if (!claims?.sub) {
@@ -152,6 +163,18 @@ async function handleImageUpload(event) {
     const imageId = uuidv4();
     const s3Key = generateImageS3Key(user.userId, imageId, filename);
 
+    if (!USE_DYNAMODB) {
+      // Mock mode: Return test response without DynamoDB/S3 operations
+      console.log(`🧪 MOCK MODE: Image upload for ${filename} (${contentType})`);
+      return successResponse({
+        imageId,
+        uploadUrl: `https://mock-s3-upload-url.example.com/${s3Key}?mock=true`,
+        s3Key,
+        filename,
+        message: 'Mock presigned URL generated successfully'
+      });
+    }
+
     // Generate presigned URL for upload
     const uploadUrl = await getSignedUrl(s3Client, new PutObjectCommand({
       Bucket: S3_BUCKET,
@@ -218,6 +241,37 @@ async function handleListImages(event) {
     const user = getUserFromEvent(event);
     const queryParams = event.queryStringParameters || {};
     const limit = parseInt(queryParams.limit) || 20;
+
+    if (!USE_DYNAMODB) {
+      // Mock mode: Return sample images
+      console.log(`🧪 MOCK MODE: Listing images for user ${user.userId}`);
+      const mockImages = [
+        {
+          imageId: 'mock-image-1',
+          filename: 'sample-logo.png',
+          contentType: 'image/png',
+          tags: { predefined: ['logo'], custom: ['brand'] },
+          uploadedAt: new Date().toISOString(),
+          status: 'uploaded',
+          s3Key: 'stage/users/mock-user/images/mock-image-1.png'
+        },
+        {
+          imageId: 'mock-image-2',
+          filename: 'test-photo.jpg',
+          contentType: 'image/jpeg',
+          tags: { predefined: ['photo'], custom: ['test'] },
+          uploadedAt: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+          status: 'uploaded',
+          s3Key: 'stage/users/mock-user/images/mock-image-2.jpg'
+        }
+      ];
+
+      return successResponse({
+        images: mockImages.slice(0, limit),
+        count: mockImages.length
+      });
+    }
+
     const lastKey = queryParams.lastKey ? JSON.parse(decodeURIComponent(queryParams.lastKey)) : null;
 
     const queryParams_db = {
@@ -451,6 +505,33 @@ async function handleSearchImages(event) {
       return errorResponse(400, 'At least one tag is required for search');
     }
 
+    if (!USE_DYNAMODB) {
+      // Mock mode: Return filtered sample results
+      console.log(`🧪 MOCK MODE: Searching images for tags: ${tags.join(', ')}`);
+      const mockResults = [
+        {
+          imageId: 'search-result-1',
+          filename: 'branded-logo.png',
+          contentType: 'image/png',
+          tags: { predefined: ['logo', 'brand'], custom: ['corporate'] },
+          uploadedAt: new Date().toISOString(),
+          status: 'uploaded'
+        }
+      ];
+
+      // Simple mock filtering - if search contains 'logo', return logo results
+      const filteredResults = mockResults.filter(item => {
+        const allTags = [...item.tags.predefined, ...item.tags.custom];
+        return tags.some(tag => allTags.includes(tag));
+      });
+
+      return successResponse({
+        images: filteredResults.slice(0, limit),
+        searchTags: tags,
+        count: filteredResults.length
+      });
+    }
+
     // Use GSI1 to search by primary tag
     const primaryTag = tags[0];
     const searchParams = {
@@ -508,10 +589,17 @@ exports.handler = async (event) => {
     const httpMethod = event.requestContext?.http?.method || event.httpMethod;
     const rawPath = event.rawPath || event.path;
 
-    // Remove stage prefix if present
+    // Remove first path segment (/api) to get clean routing
     const path = rawPath.replace(/^\/[^\/]+/, '') || rawPath;
 
-    console.log('🔍 Parsed request:', { httpMethod, rawPath, path });
+    console.log('🔍 DETAILED PATH ANALYSIS:');
+    console.log('  - httpMethod:', httpMethod);
+    console.log('  - rawPath:', rawPath);
+    console.log('  - processed path:', path);
+    console.log('  - event.path:', event.path);
+    console.log('  - event.rawPath:', event.rawPath);
+    console.log('  - requestContext path:', event.requestContext?.http?.path);
+    console.log('🔍 Path processing rule: rawPath.replace(/^\/[^\/]+/, "") || rawPath');
 
     // Handle CORS preflight
     if (httpMethod === 'OPTIONS') {
@@ -528,27 +616,27 @@ exports.handler = async (event) => {
     }
 
     // Route requests
-    if (httpMethod === 'POST' && path === '/api/images/upload') {
+    if (httpMethod === 'POST' && path === '/images/upload') {
       return await handleImageUpload(event);
     }
 
-    if (httpMethod === 'GET' && path === '/api/images') {
+    if (httpMethod === 'GET' && path === '/images') {
       return await handleListImages(event);
     }
 
-    if (httpMethod === 'GET' && path === '/api/images/search') {
+    if (httpMethod === 'GET' && path === '/images/search') {
       return await handleSearchImages(event);
     }
 
-    if (httpMethod === 'GET' && path.startsWith('/api/images/')) {
+    if (httpMethod === 'GET' && path.startsWith('/images/')) {
       return await handleGetImage(event);
     }
 
-    if (httpMethod === 'PUT' && path.startsWith('/api/images/')) {
+    if (httpMethod === 'PUT' && path.startsWith('/images/')) {
       return await handleUpdateImage(event);
     }
 
-    if (httpMethod === 'DELETE' && path.startsWith('/api/images/')) {
+    if (httpMethod === 'DELETE' && path.startsWith('/images/')) {
       return await handleDeleteImage(event);
     }
 
@@ -589,6 +677,12 @@ exports.health = async (event) => {
       timestamp: new Date().toISOString(),
       stage: process.env.STAGE || 'unknown',
       version: '1.0.0',
+      mode: USE_DYNAMODB ? 'production' : 'mock',
+      config: {
+        useDynamoDB: USE_DYNAMODB,
+        dynamoTable: DYNAMODB_TABLE || 'not configured',
+        s3Bucket: S3_BUCKET
+      },
       endpoints: [
         'POST /api/images/upload',
         'GET /api/images',

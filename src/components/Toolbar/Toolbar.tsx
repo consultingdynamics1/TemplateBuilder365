@@ -596,6 +596,25 @@ export const Toolbar: React.FC = () => {
       </div>
 
 
+      {/* Development Tools - show in development and stage mode for testing */}
+      {(isDevelopment() || window.location.hostname.includes('cloudfront.net')) && (
+        <div className="toolbar-section">
+          <div className="tool-group">
+            <button
+              className="tool-button dev-tool"
+              onClick={() => {
+                // Navigate to test interface using hash routing
+                window.location.hash = '#test-image-api';
+              }}
+              title="Test Image API"
+              type="button"
+            >
+              <span className="tool-icon">🧪</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* User Section */}
       <div className="toolbar-section user-section">
         <UserInfo />
